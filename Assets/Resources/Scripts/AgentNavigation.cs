@@ -27,9 +27,18 @@ public class AgentNavigation : MonoBehaviour
 
     public Vector2 m_currentPos = new Vector2();
 
+    private int failCounter;
+    private int maxFailCounter = 2;
+
+    private GameObject CurrentNode;
+
+    public Material nodeMat;
+    public Material CurrNodeMat;
+
     // Use this for initialization
     void Start()
     {
+        failCounter = maxFailCounter;
         m_StartNode = GameObject.FindWithTag("StartNode");
         m_EndNode = GameObject.FindWithTag("EndNode");
 
@@ -41,6 +50,15 @@ public class AgentNavigation : MonoBehaviour
             HeuristicCost = 42
         });
         m_CurrentNode = m_ClosedList[0];
+
+        CurrentNode = new GameObject();
+        CurrentNode.transform.localScale *= 0.5f;
+        CurrentNode.name = "CurrentNode";
+        CurrentNode.AddComponent<MeshRenderer>();
+        CurrentNode.AddComponent<MeshFilter>();
+        CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
+        CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
+        CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
     }
 
     void FixedUpdate()
@@ -73,19 +91,56 @@ public class AgentNavigation : MonoBehaviour
         }
 
         m_currentPos = node.NodeId;
-
         try
         {
+            if (failCounter <= 0)
+            {
+                failCounter = maxFailCounter;
+                if (direction)
+                {
+                    if (positive)
+                    {
+                        m_CurrentNode.NodeId = new Vector2(m_CurrentNode.NodeId.x - 1, m_CurrentNode.NodeId.y);
+                    }
+                    else
+                    {
+                        m_CurrentNode.NodeId = new Vector2(m_CurrentNode.NodeId.x + 1, m_CurrentNode.NodeId.y);
+                    }
+                }
+                else
+                {
+                    if (positive)
+                    {
+                        m_CurrentNode.NodeId = new Vector2(m_CurrentNode.NodeId.x, m_CurrentNode.NodeId.y - 1);
+                    }
+                    else
+                    {
+                        m_CurrentNode.NodeId = new Vector2(m_CurrentNode.NodeId.x, m_CurrentNode.NodeId.y + 1);
+                    }
+                }
+                CurrentNode.transform.position = new Vector3(m_CurrentNode.NodeId.x, 1.5f, m_CurrentNode.NodeId.y);
+                return;
+            }
             if (Physics.OverlapSphere(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), 0.1f)[0].GetComponent<MeshFilter>().mesh.name == mesh.name)
             {
                 Debug.Log(m_currentPos);
                 m_CurrentNode = node;
                 //newNode(m_CurrentNode);
             }
-            //positive = !positive;
+            else
+            {
+                if(direction)
+                    positive = !positive;
+                direction = !direction;
+                //if(!direction)
+            }
+            failCounter--;
         }
         catch
         {
+            //CurrentNode.transform.position = new Vector3(node.NodeId.x, 0.5f, node.NodeId.y) +  Vector3.Angle(transform.position, new Vector3(node.NodeId.x, 0.5f, node.NodeId.y))
+            CurrentNode.transform.position = new Vector3(node.NodeId.x, 1.5f, node.NodeId.y);
+            failCounter = maxFailCounter;
             newNode(node);
             direction = !direction;
         }
@@ -112,5 +167,6 @@ public class AgentNavigation : MonoBehaviour
         obj.AddComponent<MeshFilter>();
         obj.GetComponent<MeshFilter>().mesh = mesh;
         obj.GetComponent<MeshFilter>().mesh.name = "Sphere";
+        obj.GetComponent<MeshRenderer>().material = nodeMat;
     }
 }

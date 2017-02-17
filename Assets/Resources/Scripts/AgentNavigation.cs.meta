@@ -1,11 +1,13 @@
 fileFormatVersion: 2
 guid: 7c5484d8bb2ecd041ae4e88f77f1105d
-timeCreated: 1487343368
+timeCreated: 1487346673
 licenseType: Pro
 MonoImporter:
   serializedVersion: 2
   defaultReferences:
   - mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  - nodeMat: {fileID: 2100000, guid: 269d45b58aa26634b8f6999f6481b05c, type: 2}
+  - CurrNodeMat: {fileID: 2100000, guid: dc09847e8c56e52438223ed3723a200a, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
