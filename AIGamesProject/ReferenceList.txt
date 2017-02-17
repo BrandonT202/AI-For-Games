@@ -1,2 +1,0 @@
-Assets:
-<add links to assets here>
