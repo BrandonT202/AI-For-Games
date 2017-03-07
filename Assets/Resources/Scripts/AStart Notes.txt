@@ -1,0 +1,8 @@
+A* Notes:
+
+Change the game objects in the scene so that there are no negative values (-estimate nonsense)
+
+Open List nodes are added to the list at the end of the connection
+If a dubious node is added to the closed list and it wasn't desireable then it can be placed back into the open list
+
+Heiristic is another class
