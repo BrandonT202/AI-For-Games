@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Heuristic : MonoBehaviour
+public class Heuristic
 {
     private Node m_goalNode;
     public Heuristic(Node goal)
@@ -11,6 +11,6 @@ public class Heuristic : MonoBehaviour
 
     public float Estimate(Node node)
     {
-        return Vector2.Distance(m_goalNode.NodeId, node.NodeId);
+        return Mathf.Abs(node.NodeId.x - m_goalNode.NodeId.y) + Mathf.Abs(node.NodeId.y - m_goalNode.NodeId.y);
     }
 }

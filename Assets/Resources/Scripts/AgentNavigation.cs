@@ -10,13 +10,18 @@ public class AgentNavigation : MonoBehaviour
 
     // Closed list for nodes visited
     public List<Node> m_ClosedList = new List<Node>();
+
+    private EnvironmentGraph m_graph;
+
+    private PathFinder m_pathFinder = new PathFinder();
+
     public int ListSize;
 
     // Starting Node
-    private GameObject m_StartNode;
+    private Node m_StartNode;
 
     // End Node
-    private GameObject m_EndNode;
+    private Node m_EndNode;
 
     private Node m_CurrentNode;
 
@@ -78,9 +83,19 @@ public class AgentNavigation : MonoBehaviour
         //});
         //m_CurrentNode = m_ClosedList[0];
 
-        EnvironmentGraph graph = new EnvironmentGraph(mesh, nodeMat2);
+        m_graph = new EnvironmentGraph(mesh, nodeMat2);
+        m_graph.Reset();
 
-        graph.CreateGraphWithoutDiagonals();
+        GameObject start = GameObject.FindWithTag("StartNode");
+        GameObject end = GameObject.FindWithTag("EndNode");
+
+        m_StartNode = new Node();
+        Vector3 startPosition = start.transform.position;
+        m_StartNode.NodeId = new Vector2(startPosition.x, startPosition.z);
+
+        m_EndNode = new Node();
+        Vector3 endPosition = end.transform.position;
+        m_EndNode.NodeId = new Vector2(endPosition.x, endPosition.z);
 
         CurrentNode = new GameObject();
         CurrentNode.transform.localScale *= 0.5f;
@@ -165,68 +180,106 @@ public class AgentNavigation : MonoBehaviour
     //    m_OpenList.AddRange(nodesToAdd);
     //}
 
-    //void FixedUpdate()
-    //{
-    //    m_currentHeuristicCost = m_CurrentNode.HeuristicCost;
+    void FixedUpdate()
+    {
+        timer += Time.deltaTime;
+        m_graph.DrawGraph();
 
-    //    timer += Time.deltaTime;
-    //    if (timer >= 0.05f)
-    //    {
-    //        timer = 0;
+        if (!m_graph.m_ValidGraph && timer > 0.1f)
+        {
+            timer = 0;
+            m_graph.RealTimeCreateGraphWithoutDiagonals();
+        }
 
-    //        // Find potential nodes around the current node
-    //        List<Node> potentialNodes = GetPotentialNodes(m_CurrentNode);
+        if (m_graph.m_ValidGraph && timer > 5f)
+        {
+            timer = 0;
 
-    //        // Only add nodes that aren't headed into a wall
-    //        AddValidNodesToOpenList(potentialNodes);
+            GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
 
-    //        // CHECK OPEN NODES
-    //        Node closestNode = new Node();
-    //        closestNode.FinalValue = int.MaxValue;
-    //        closestNode.NodeId = m_ClosedList[m_ClosedList.Count - 1].NodeId;
-    //        foreach (Node listNode in m_OpenList)
-    //        {
-    //            // Find closest to end node
-    //            if (listNode.FinalValue <= closestNode.FinalValue)
-    //            {
-    //                // If there isn't any node in the way
-    //                if (Physics.OverlapSphere(new Vector3(listNode.NodeId.x, 0.5f, listNode.NodeId.y), 0.1f).Length == 0)
-    //                {
-    //                    closestNode = listNode;
-    //                }
-    //            }
-    //        }
+            foreach (GameObject obj in prevPath)
+            {
+                Destroy(obj);
+            }
 
-    //        // Remove the closest node from the open list 
-    //        RemoveNodeFromOpenList(m_CurrentNode);
+            List<Connection> path = m_pathFinder.FindPathAStar(m_graph, m_StartNode, m_EndNode, new Heuristic(m_EndNode));
 
-    //        // Have we reached the end node??
-    //        if (m_CurrentNode.NodeId != new Vector2(m_EndNode.transform.position.x, m_EndNode.transform.position.z))
-    //        {
-    //            if (Physics.OverlapSphere(new Vector3(closestNode.NodeId.x, 0.5f, closestNode.NodeId.y), 0.1f).Length == 0)
-    //            {
-    //                // Add new node to scene
-    //                newNode(closestNode);
-    //            }
-    //        }
-    //        else//reached end goal [ Check the open list for a valid contender for closest node ]
-    //            this.enabled = false;
+            if (path == null)
+            {
+                Debug.Log("No Path was found this iteration");
+            }
+            else
+            {
+                Debug.Log("YES! A path was found this iteration");
+            }
 
-    //        // Make closest node current node
-    //        m_CurrentNode = closestNode;
+            foreach (var connection in path)
+            {
+                if(connection != null)
+                    m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+            }
 
-    //        // Delete old current node indicator 
-    //        GameObject tempObj = GameObject.Find("Current Position");
-    //        if (tempObj != null)
-    //            Destroy(tempObj);
+            //    m_currentHeuristicCost = m_CurrentNode.HeuristicCost;
 
-    //        // Add new current node indicator
-    //        createObj(new Vector3(m_currentPos.x, 1.5f, m_currentPos.y), new Vector3(0.4f, 0.4f, 0.4f), CurrNodeMat, "Current Position");
+            //    timer += Time.deltaTime;
+            //    if (timer >= 0.05f)
+            //    {
+            //        timer = 0;
 
-    //        m_currentPos = m_CurrentNode.NodeId;
-    //        ListSize = m_ClosedList.Count;
-    //    }
-    //}
+            //        // Find potential nodes around the current node
+            //        List<Node> potentialNodes = GetPotentialNodes(m_CurrentNode);
+
+            //        // Only add nodes that aren't headed into a wall
+            //        AddValidNodesToOpenList(potentialNodes);
+
+            //        // CHECK OPEN NODES
+            //        Node closestNode = new Node();
+            //        closestNode.FinalValue = int.MaxValue;
+            //        closestNode.NodeId = m_ClosedList[m_ClosedList.Count - 1].NodeId;
+            //        foreach (Node listNode in m_OpenList)
+            //        {
+            //            // Find closest to end node
+            //            if (listNode.FinalValue <= closestNode.FinalValue)
+            //            {
+            //                // If there isn't any node in the way
+            //                if (Physics.OverlapSphere(new Vector3(listNode.NodeId.x, 0.5f, listNode.NodeId.y), 0.1f).Length == 0)
+            //                {
+            //                    closestNode = listNode;
+            //                }
+            //            }
+            //        }
+
+            //        // Remove the closest node from the open list 
+            //        RemoveNodeFromOpenList(m_CurrentNode);
+
+            //        // Have we reached the end node??
+            //        if (m_CurrentNode.NodeId != new Vector2(m_EndNode.transform.position.x, m_EndNode.transform.position.z))
+            //        {
+            //            if (Physics.OverlapSphere(new Vector3(closestNode.NodeId.x, 0.5f, closestNode.NodeId.y), 0.1f).Length == 0)
+            //            {
+            //                // Add new node to scene
+            //                newNode(closestNode);
+            //            }
+            //        }
+            //        else//reached end goal [ Check the open list for a valid contender for closest node ]
+            //            this.enabled = false;
+
+            //        // Make closest node current node
+            //        m_CurrentNode = closestNode;
+
+            //        // Delete old current node indicator 
+            //        GameObject tempObj = GameObject.Find("Current Position");
+            //        if (tempObj != null)
+            //            Destroy(tempObj);
+
+            //        // Add new current node indicator
+            //        createObj(new Vector3(m_currentPos.x, 1.5f, m_currentPos.y), new Vector3(0.4f, 0.4f, 0.4f), CurrNodeMat, "Current Position");
+
+            //        m_currentPos = m_CurrentNode.NodeId;
+            //        ListSize = m_ClosedList.Count;
+            //    }
+        }
+    }
 
     void RemoveNodeFromOpenList(Node node)
     {

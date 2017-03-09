@@ -1,49 +1,162 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 class EnvironmentGraph
 {
     enum Direction { NORTH = 0, EAST, SOUTH, WEST, NUMOFDIRECTIONS };
 
-    public Mesh mesh;
-    public Material nodeMat;
-    private List<Node> m_graph;
-    Vector2 currentPosition;
+    public Mesh m_mesh;
+    public Material m_material;
+
+    // A list of connections between all the 
+    // nodes in the game environment
+    private List<Connection> m_graph;
+
+    private Vector3 m_currentPosition;
+
+    // Real-time values
+    int m_XIndex = 0;
+    int m_ZIndex = 0;
+    public bool m_ValidGraph { get; set; }
 
     public EnvironmentGraph(Mesh mesh, Material material)
     {
-        this.mesh = mesh;
-        this.nodeMat = material;
+        this.m_mesh = mesh;
+        this.m_material = material;
     }
 
-    public void CreateGraphWithoutDiagonals()
+    public void Reset()
     {
         GameObject start = GameObject.FindWithTag("StartNode");
-        GameObject end = GameObject.FindWithTag("EndNode");
         Node startNode = new Node();
         Vector3 startPosition = start.transform.position;
         startNode.NodeId = new Vector2(startPosition.x, startPosition.z);
 
-        Node endNode = new Node();
-        Vector3 endPosition = end.transform.position;
-        endNode.NodeId = new Vector2(endPosition.x, endPosition.z);
+        m_currentPosition = startPosition;
+        m_graph = new List<Connection>();
+        m_ValidGraph = false;
+    }
 
-        currentPosition = startNode.NodeId;
-        List<Connection> connectionList = GetPotentialNodes(currentPosition);
-        //while(currentPosition != endNode.NodeId)
-        //{
-        /* 
-         * Currently at start node
-         * Find positions to move into from current pos
-         * Validate positions with a collision check
-         *  if there isnt a collision
-         *      Add a connection
-         *      Add from node = current
-         *      Add to node = possible node
-         *      Add connection cost = 10 [Horizonal only]
-         *  else Skip
-        */
-        //}
+    public void DrawGraph()
+    {
+        foreach (Connection connection in m_graph)
+        {
+            Node fromNode = connection.GetFromNode();
+            Node toNode = connection.GetToNode();
+
+            //Debug: Add Line to represent the connections
+            Vector3 from = new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y);
+            Vector3 to = new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y);
+            Debug.DrawLine(from, to, Color.red);
+        }
+    }
+
+    public void CreateGraphWithoutDiagonals()
+    {
+        // Reset graph for new graph creation
+        Reset();
+
+        int xCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        for (int i = 0; i < xCount; i++)
+        {
+            List<Connection> newConnections = new List<Connection>();
+            for (int j = 0; j < zCount; j++)
+            {
+                newConnections = GetPotentialNodes(m_currentPosition);
+
+                if (newConnections.Count > 0)
+                {
+                    m_graph.AddRange(newConnections);
+                }
+
+                m_currentPosition.z -= 1f;
+            }
+            m_currentPosition.z += zCount;
+            m_currentPosition.x -= 1f;
+        }
+    }
+
+    public void RealTimeCreateGraphWithoutDiagonals()
+    {
+        int xCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+
+        if(m_XIndex < xCount)
+        {
+            if (m_ZIndex < zCount)
+            {
+                List<Connection> newConnections = GetPotentialNodes(m_currentPosition);
+
+                foreach (Connection connection in newConnections)
+                {
+                    Vector2 from = connection.GetFromNode().NodeId;
+                    Vector2 to = connection.GetToNode().NodeId;
+
+                    Debug.Log("Adding Connection Between: From:" + from + " TO:" + to);
+                }
+
+                if (newConnections.Count > 0)
+                {
+                    m_graph.AddRange(newConnections);
+                }
+
+                m_currentPosition.z -= 1f;
+                m_ZIndex++;
+            }
+            else
+            {
+                m_ZIndex = 0;
+                m_XIndex++;
+                m_currentPosition.z += zCount;
+                m_currentPosition.x -= 1f;
+            }
+        }
+        else
+        {
+            m_ValidGraph = true;
+        }
+    }
+
+    public List<Connection> GetSurroundingConnections(Node centerNode)
+    {
+        List<Connection> surroundingConnections = new List<Connection>();
+        foreach (Connection connection in m_graph)
+        {
+            Node fromNode = connection.GetFromNode();
+            if (fromNode.NodeId == centerNode.NodeId)
+            {
+                surroundingConnections.Add(connection);
+            }
+        }
+        return surroundingConnections;
+    }
+
+    private bool IsPositionClear(Vector3 position)
+    {
+        if (Physics.OverlapSphere(position, 0.2f).Length == 0)
+        {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    private bool IsConnectionValid(Vector3 from, Vector3 to)
+    {
+        if (from == to)
+            return false;
+
+        // Check for collision at the TO node
+        Collider[] obstructions = Physics.OverlapSphere(to, 0.2f);
+        if (obstructions.Length > 0)
+        {
+            if (obstructions[0].tag != "Grid")
+                return false;
+        }
+
+        return true;
     }
 
     private List<Connection> GetPotentialNodes(Vector3 searchPos)
@@ -70,7 +183,7 @@ class EnvironmentGraph
                     break;
             }
 
-            if (Physics.OverlapSphere(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), 0.1f).Length == 0)
+            if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
                 // Calculate connection cost
                 float newConnectionCost = 10;
@@ -82,8 +195,10 @@ class EnvironmentGraph
                 // Set ToNode
                 Node toNode = node;
 
-                // Debug: Add sphere to represent to node
-                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y), new Vector3(0.2f, 0.2f, 0.2f), nodeMat, toNode.NodeId.x + " : " + toNode.NodeId.y);
+                // Debug: Add sphere to represent TO NODE
+                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y), 
+                    new Vector3(0.2f, 0.2f, 0.2f), m_material, 
+                    toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
 
                 // Create new connection node
                 Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
@@ -91,27 +206,61 @@ class EnvironmentGraph
                 //Add potential node
                 potentialNodes.Add(newConnection);
             }
+            else
+            {
+                // Calculate connection cost
+                float newConnectionCost = 10;
+
+                // Set FromNode
+                Node fromNode = new Node();
+                fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
+
+                // Set ToNode
+                Node toNode = node;
+
+                bool connection = m_graph.Exists(c => c.GetFromNode().NodeId == fromNode.NodeId &&
+                                                            c.GetToNode().NodeId == toNode.NodeId);
+                if(!connection)
+                {
+                    if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y), 
+                        new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
+                    {
+                        // Create new connection node
+                        Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
+
+                        //Add potential node
+                        potentialNodes.Add(newConnection);
+                    }
+                }
+            }
         }
         return potentialNodes;
     }
 
-    void newNode(Node node)
+    public void newNode(Node node)
     {
         Debug.Log("Found valid node");
-        createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(1, 1, 1), nodeMat, node.NodeId.x + " : " + node.NodeId.y);
+        createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(1, 1, 1), m_material, node.NodeId.x + " : " + node.NodeId.y);
     }
 
-    void createObj(Vector3 pos, Vector3 scale, Material mat, string name)
+    public void newNode(Node node, Material mat, string tagname)
+    {
+        Debug.Log("Found valid node");
+        createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(1, 1, 1), mat, node.NodeId.x + " : " + node.NodeId.y, tagname);
+    }
+
+    void createObj(Vector3 pos, Vector3 scale, Material mat, string name, string tagname = "Path")
     {
 
         GameObject obj = new GameObject();
         obj.transform.position = pos;
         obj.transform.localScale = scale;
         obj.name = name;
+        obj.tag = tagname;
         obj.AddComponent<SphereCollider>();
         obj.AddComponent<MeshRenderer>();
         obj.AddComponent<MeshFilter>();
-        obj.GetComponent<MeshFilter>().mesh = mesh;
+        obj.GetComponent<MeshFilter>().mesh = m_mesh;
         obj.GetComponent<MeshFilter>().mesh.name = "Sphere";
         obj.GetComponent<MeshRenderer>().material = mat;
     }
