@@ -86,6 +86,20 @@ public class AgentNavigation : MonoBehaviour
         m_graph = new EnvironmentGraph(mesh, nodeMat2);
         m_graph.Reset();
 
+        ResetPath();
+
+        CurrentNode = new GameObject();
+        CurrentNode.transform.localScale *= 0.5f;
+        CurrentNode.name = "CurrentNode";
+        CurrentNode.AddComponent<MeshRenderer>();
+        CurrentNode.AddComponent<MeshFilter>();
+        CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
+        CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
+        CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
+    }
+
+    private void ResetPath()
+    {
         GameObject start = GameObject.FindWithTag("StartNode");
         GameObject end = GameObject.FindWithTag("EndNode");
 
@@ -96,15 +110,6 @@ public class AgentNavigation : MonoBehaviour
         m_EndNode = new Node();
         Vector3 endPosition = end.transform.position;
         m_EndNode.NodeId = new Vector2(endPosition.x, endPosition.z);
-
-        CurrentNode = new GameObject();
-        CurrentNode.transform.localScale *= 0.5f;
-        CurrentNode.name = "CurrentNode";
-        CurrentNode.AddComponent<MeshRenderer>();
-        CurrentNode.AddComponent<MeshFilter>();
-        CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
-        CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
-        CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
     }
 
     //List<Node> GetPotentialNodes(Node searchFromNode)
@@ -185,15 +190,28 @@ public class AgentNavigation : MonoBehaviour
         timer += Time.deltaTime;
         m_graph.DrawGraph();
 
-        if (!m_graph.m_ValidGraph && timer > 0.1f)
+        if (!m_graph.m_ValidGraph && timer > 0.01f)
         {
             timer = 0;
             m_graph.RealTimeCreateGraphWithoutDiagonals();
         }
 
+        if(Input.GetKeyDown(KeyCode.R))
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject start = GameObject.FindWithTag("StartNode");
+                GameObject end = GameObject.FindWithTag("EndNode");
+                start.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
+                end.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
+            }
+            ResetPath();
+            timer = 0f;
+        }
+
         if (m_graph.m_ValidGraph && timer > 5f)
         {
-            timer = 0;
+            timer = 0f;
 
             GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
 
@@ -211,12 +229,11 @@ public class AgentNavigation : MonoBehaviour
             else
             {
                 Debug.Log("YES! A path was found this iteration");
-            }
-
-            foreach (var connection in path)
-            {
-                if(connection != null)
-                    m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+                foreach (var connection in path)
+                {
+                    if (connection != null)
+                        m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+                }
             }
 
             //    m_currentHeuristicCost = m_CurrentNode.HeuristicCost;

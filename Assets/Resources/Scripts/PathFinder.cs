@@ -153,18 +153,25 @@ class PathFinder
         }
         else
         {
-            // Compile a list of nodes 
-            // to create the path
+            // Compile a list of nodes to create the path
             List<Connection> path = new List<Connection>();
-            List<Connection> tempPath = new List<Connection>();
+            List<Connection> tempPath = new List<Connection> { m_Current.Connection };
 
-            NodeRecord previousRecord = m_Current;
+            //NodeRecord previousRecord = m_Current;
 
             // Work back along the path, accumilating the nodes
-
-            foreach (NodeRecord record in m_ClosedList)
+            while (m_Current.Node.NodeId != start.NodeId)
             {
+                if (m_Current.Node.NodeId == start.NodeId)
+                {
+                    NodeRecord startRecordListItem = m_ClosedList.Find(r => r.Node.NodeId == start.NodeId);
+                    tempPath.Add(startRecordListItem.Connection);
+                    break;
+                }
+                Node fromNode = m_Current.Connection.GetFromNode();
+                NodeRecord record = m_ClosedList.Find(r => r.Node.NodeId == fromNode.NodeId);
                 tempPath.Add(record.Connection);
+                m_Current = record;
             }
 
             //while (m_Current.Node.NodeId != start.NodeId)

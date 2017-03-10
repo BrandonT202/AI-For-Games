@@ -80,8 +80,14 @@ class EnvironmentGraph
 
     public void RealTimeCreateGraphWithoutDiagonals()
     {
-        int xCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
-        int zCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        GameObject start = GameObject.FindWithTag("StartNode");
+        Vector3 startPosition = start.transform.position;
+
+        GameObject end = GameObject.FindWithTag("EndNode");
+        Vector3 endPosition = end.transform.position;
+
+        int xCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
 
         if(m_XIndex < xCount)
         {
