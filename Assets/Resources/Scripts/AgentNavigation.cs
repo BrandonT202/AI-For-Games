@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class AgentNavigation : MonoBehaviour
 {
@@ -44,44 +45,10 @@ public class AgentNavigation : MonoBehaviour
     public Material nodeMat2;
     public Material CurrNodeMat;
     float timer;
-
-    /* 
-     * SETUP
-     * Add start node to the closed list
-     * 
-     * ADD NEW OPEN NODES
-     * For each direction around the current node
-     *      Detect any collisions
-     *          if collision
-     *              skip that node
-     *          else
-     *              Calculate heuristic cost and G cost (directional cost)
-     *              add node to the open list
-     * 
-     * CHECK OPEN NODES AND ADD NODE TO CLOSED LIST
-     * For each node in the open list 
-     *      if current node F cost > node F cost 
-     *          closest node = node
-     *      else
-     *          continue
-    */
+    
 
     void Start()
     {
-        //failCounter = maxFailCounter;
-        //m_StartNode = GameObject.FindWithTag("StartNode");
-        //m_EndNode = GameObject.FindWithTag("EndNode");
-
-        //Add start node to the closed list
-        //int finalValue = (int)(Mathf.Abs(m_StartNode.transform.position.x) - Mathf.Abs(m_EndNode.transform.position.x) + Mathf.Abs(m_StartNode.transform.position.z) - Mathf.Abs(m_EndNode.transform.position.z));
-        //m_ClosedList.Add(new Node
-        //{
-        //    NodeId = new Vector2(m_StartNode.transform.position.x, m_StartNode.transform.position.z),
-        //    EndNode = false,
-        //    FinalValue = finalValue,
-        //    HeuristicCost = 1000
-        //});
-        //m_CurrentNode = m_ClosedList[0];
 
         m_graph = new EnvironmentGraph(mesh, nodeMat2);
         m_graph.Reset();
@@ -96,6 +63,7 @@ public class AgentNavigation : MonoBehaviour
         CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
         CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
         CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
+        m_graph.CreateGraphWithoutDiagonals();
     }
 
     private void ResetPath()
@@ -111,91 +79,19 @@ public class AgentNavigation : MonoBehaviour
         Vector3 endPosition = end.transform.position;
         m_EndNode.NodeId = new Vector2(endPosition.x, endPosition.z);
     }
-
-    //List<Node> GetPotentialNodes(Node searchFromNode)
-    //{
-    //    List<Node> potentialNodes = new List<Node>();
-    //    for (Direction m_direction = Direction.NORTH; m_direction < Direction.NUMOFDIRECTIONS; m_direction++)
-    //    {
-    //        Node node = new Node();
-    //        switch (m_direction)
-    //        {
-    //            case Direction.NORTH:
-    //                node.NodeId = new Vector2(searchFromNode.NodeId.x, searchFromNode.NodeId.y + 1);
-    //                break;
-    //            case Direction.EAST:
-    //                node.NodeId = new Vector2(searchFromNode.NodeId.x + 1, searchFromNode.NodeId.y);
-    //                break;
-    //            case Direction.SOUTH:
-    //                node.NodeId = new Vector2(searchFromNode.NodeId.x, searchFromNode.NodeId.y - 1);
-    //                break;
-    //            case Direction.WEST:
-    //                node.NodeId = new Vector2(searchFromNode.NodeId.x - 1, searchFromNode.NodeId.y);
-    //                break;
-    //            default:
-    //                break;
-    //        }
-
-    //        if (Physics.OverlapSphere(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), 0.1f).Length == 0)
-    //        {
-    //            // Calculate h-value
-    //            int hValue = (int)(Mathf.Abs(node.NodeId.x - m_EndNode.transform.position.x) + Mathf.Abs(node.NodeId.y - m_EndNode.transform.position.z));
-    //            if (hValue < 0)
-    //                Debug.Log("HVALUE: " + hValue);
-    //            node.HeuristicCost = hValue;
-
-    //            // Calculate final value
-    //            node.FinalValue = node.HeuristicCost + m_DirectionCost;
-
-    //            //Add potential node
-    //            potentialNodes.Add(node);
-    //        }
-    //    }
-    //    return potentialNodes;
-    //}
-
-    //void AddValidNodesToOpenList(List<Node> potentialNodes)
-    //{
-    //    List<Node> nodesToAdd = new List<Node>();
-    //    foreach (Node potentialNode in potentialNodes)
-    //    {
-    //        // Add an "open node"
-    //        createObj(new Vector3(potentialNode.NodeId.x, 0.5f, potentialNode.NodeId.y), new Vector3(0.2f, 0.2f, 0.2f), nodeMat2, "OPEN " + potentialNode.NodeId.x + " : " + potentialNode.NodeId.y);
-
-    //        // Add open node to the list if it doesn't exist
-    //        if (m_OpenList.Count != 0)
-    //        {
-    //            bool nodeExists = false;
-    //            foreach (Node openNode in m_OpenList)
-    //            {
-    //                if (openNode.NodeId == potentialNode.NodeId)
-    //                    nodeExists = true;
-    //            }
-
-    //            if (!nodeExists)
-    //                nodesToAdd.Add(potentialNode);
-    //        }
-    //        else
-    //        {
-    //            m_OpenList.Add(potentialNode);
-    //        }
-    //    }
-
-    //    // Add new unique nodes
-    //    m_OpenList.AddRange(nodesToAdd);
-    //}
+    
 
     void FixedUpdate()
     {
         timer += Time.deltaTime;
-        m_graph.DrawGraph();
-
+        m_graph.DrawGraph(); // DEBUG GRID
+        
         if (!m_graph.m_ValidGraph && timer > 0.01f)
         {
             timer = 0;
-            m_graph.RealTimeCreateGraphWithoutDiagonals();
+            //m_graph.RealTimeCreateGraphWithoutDiagonals();
         }
-
+        
         if(Input.GetKeyDown(KeyCode.R))
         {
             for (int i = 0; i < 2; i++)
@@ -205,12 +101,15 @@ public class AgentNavigation : MonoBehaviour
                 start.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
                 end.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
             }
+            reMap();
+     
             ResetPath();
             timer = 0f;
         }
 
-        if (m_graph.m_ValidGraph && timer > 5f)
+        if (m_graph.m_ValidGraph && timer > .1f)
         {
+            //m_graph.m_ValidGraph = false;
             timer = 0f;
 
             GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
@@ -235,66 +134,7 @@ public class AgentNavigation : MonoBehaviour
                         m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
                 }
             }
-
-            //    m_currentHeuristicCost = m_CurrentNode.HeuristicCost;
-
-            //    timer += Time.deltaTime;
-            //    if (timer >= 0.05f)
-            //    {
-            //        timer = 0;
-
-            //        // Find potential nodes around the current node
-            //        List<Node> potentialNodes = GetPotentialNodes(m_CurrentNode);
-
-            //        // Only add nodes that aren't headed into a wall
-            //        AddValidNodesToOpenList(potentialNodes);
-
-            //        // CHECK OPEN NODES
-            //        Node closestNode = new Node();
-            //        closestNode.FinalValue = int.MaxValue;
-            //        closestNode.NodeId = m_ClosedList[m_ClosedList.Count - 1].NodeId;
-            //        foreach (Node listNode in m_OpenList)
-            //        {
-            //            // Find closest to end node
-            //            if (listNode.FinalValue <= closestNode.FinalValue)
-            //            {
-            //                // If there isn't any node in the way
-            //                if (Physics.OverlapSphere(new Vector3(listNode.NodeId.x, 0.5f, listNode.NodeId.y), 0.1f).Length == 0)
-            //                {
-            //                    closestNode = listNode;
-            //                }
-            //            }
-            //        }
-
-            //        // Remove the closest node from the open list 
-            //        RemoveNodeFromOpenList(m_CurrentNode);
-
-            //        // Have we reached the end node??
-            //        if (m_CurrentNode.NodeId != new Vector2(m_EndNode.transform.position.x, m_EndNode.transform.position.z))
-            //        {
-            //            if (Physics.OverlapSphere(new Vector3(closestNode.NodeId.x, 0.5f, closestNode.NodeId.y), 0.1f).Length == 0)
-            //            {
-            //                // Add new node to scene
-            //                newNode(closestNode);
-            //            }
-            //        }
-            //        else//reached end goal [ Check the open list for a valid contender for closest node ]
-            //            this.enabled = false;
-
-            //        // Make closest node current node
-            //        m_CurrentNode = closestNode;
-
-            //        // Delete old current node indicator 
-            //        GameObject tempObj = GameObject.Find("Current Position");
-            //        if (tempObj != null)
-            //            Destroy(tempObj);
-
-            //        // Add new current node indicator
-            //        createObj(new Vector3(m_currentPos.x, 1.5f, m_currentPos.y), new Vector3(0.4f, 0.4f, 0.4f), CurrNodeMat, "Current Position");
-
-            //        m_currentPos = m_CurrentNode.NodeId;
-            //        ListSize = m_ClosedList.Count;
-            //    }
+            
         }
     }
 
@@ -321,28 +161,14 @@ public class AgentNavigation : MonoBehaviour
 
         m_OpenList.Remove(removeNode);
     }
+    public void reMap()
+    {
+        GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
+
+        foreach (GameObject obj in prevPath)
+        {
+            Destroy(obj);
+        }
+        m_graph.CreateGraphWithoutDiagonals();
+    }
 }
-
-
-//            // Add current node to closed list
-//            if (m_CurrentNode.NodeId != new Vector2(m_EndNode.transform.position.x, m_EndNode.transform.position.z))
-//            {
-//                newNode(closestNode);
-
-//                if (/*m_CurrentNode.NodeId != m_ClosedList[m_ClosedList.Count - 1].NodeId*/m_OpenList.Count > 0 || m_ClosedList.Count< 2)
-//                {
-//                }
-//                /*else//dead end
-//                {
-//                    Debug.Log("Dead End");
-//                    GameObject tempObj =  GameObject.Find(m_ClosedList[m_ClosedList.Count - 1].NodeId.x + " : " + m_ClosedList[m_ClosedList.Count - 1].NodeId.y);
-//                    tempObj.GetComponent<MeshRenderer>().material = nodeMat2;
-//                    m_ClosedList.Remove(m_ClosedList[m_ClosedList.Count - 1]);
-//                    closestNode = m_ClosedList[m_ClosedList.Count - 1];
-//                }*/
-//            }
-//            else//reached end goal [ Check the open list for a valid contender for closest node ]
-//                this.enabled = false;
-
-
-//        }

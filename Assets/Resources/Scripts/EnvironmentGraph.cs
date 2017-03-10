@@ -28,14 +28,14 @@ class EnvironmentGraph
 
     public void Reset()
     {
-        GameObject start = GameObject.FindWithTag("StartNode");
+        m_ValidGraph = false;
+        GameObject start = GameObject.Find("Range1");
         Node startNode = new Node();
         Vector3 startPosition = start.transform.position;
         startNode.NodeId = new Vector2(startPosition.x, startPosition.z);
 
         m_currentPosition = startPosition;
         m_graph = new List<Connection>();
-        m_ValidGraph = false;
     }
 
     public void DrawGraph()
@@ -57,8 +57,8 @@ class EnvironmentGraph
         // Reset graph for new graph creation
         Reset();
 
-        int xCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
-        int zCount = 5;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        int xCount = 21;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = 21;// Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
         for (int i = 0; i < xCount; i++)
         {
             List<Connection> newConnections = new List<Connection>();
@@ -76,6 +76,7 @@ class EnvironmentGraph
             m_currentPosition.z += zCount;
             m_currentPosition.x -= 1f;
         }
+        m_ValidGraph = true;
     }
 
     public void RealTimeCreateGraphWithoutDiagonals()
@@ -191,8 +192,8 @@ class EnvironmentGraph
 
             if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
-                // Calculate connection cost
-                float newConnectionCost = 10;
+                    // Calculate connection cost
+                    float newConnectionCost = 10;
 
                 // Set FromNode
                 Node fromNode = new Node();
@@ -207,10 +208,12 @@ class EnvironmentGraph
                     toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
 
                 // Create new connection node
-                Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
+
+                    Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
 
                 //Add potential node
-                potentialNodes.Add(newConnection);
+                if (Vector2.Distance(fromNode.NodeId, toNode.NodeId) <= 1)
+                    potentialNodes.Add(newConnection);
             }
             else
             {
@@ -226,7 +229,7 @@ class EnvironmentGraph
 
                 bool connection = m_graph.Exists(c => c.GetFromNode().NodeId == fromNode.NodeId &&
                                                             c.GetToNode().NodeId == toNode.NodeId);
-                if(!connection)
+                if(!connection)//if wall
                 {
                     if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y), 
                         new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
