@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 
 public class AgentNavigation : MonoBehaviour
 {
@@ -30,14 +29,7 @@ public class AgentNavigation : MonoBehaviour
 
     public int m_currentHeuristicCost = 0;
 
-    public const int m_DirectionCost = 10; // Horizontal / Vertical direction
-
     public Mesh mesh;
-
-    public Vector2 m_currentPos = new Vector2();
-
-    private int failCounter;
-    private int maxFailCounter = 2;
 
     private GameObject CurrentNode;
 
@@ -45,7 +37,15 @@ public class AgentNavigation : MonoBehaviour
     public Material nodeMat2;
     public Material CurrNodeMat;
     float timer;
-    
+
+    List<Connection> m_path;
+
+    public float fromDistance;
+    public float toDistance;
+
+    bool m_IsMovingToDestinationNode = false;
+    bool m_IsAtEndNode = false;
+    Connection currentConnection = null;
 
     void Start()
     {
@@ -78,20 +78,20 @@ public class AgentNavigation : MonoBehaviour
         Vector3 endPosition = end.transform.position;
         m_EndNode.NodeId = new Vector2(endPosition.x, endPosition.z);
     }
-    
+
 
     void FixedUpdate()
     {
         timer += Time.deltaTime;
         m_graph.DrawGraph(); // DEBUG GRID
-        
+
         if (!m_graph.m_ValidGraph && timer > 0.01f)
         {
             timer = 0;
             //m_graph.RealTimeCreateGraphWithoutDiagonals();
         }
-        
-        if(Input.GetKeyDown(KeyCode.R))
+
+        if (Input.GetKeyDown(KeyCode.R))
         {
             for (int i = 0; i < 2; i++)
             {
@@ -101,7 +101,7 @@ public class AgentNavigation : MonoBehaviour
                 end.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
             }
             reMap();
-     
+
             ResetPath();
             timer = 0f;
         }
@@ -113,61 +113,135 @@ public class AgentNavigation : MonoBehaviour
             ResetPath();
         }
 
-        if (m_graph.m_ValidGraph && timer > 2f)
+        if (m_graph.m_ValidGraph && timer > 5f)
         {
             //m_graph.m_ValidGraph = false;
             timer = 0f;
 
-            GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
-
-            foreach (GameObject obj in prevPath)
+            if (!m_IsMovingToDestinationNode)
             {
-                Destroy(obj);
+                Debug.Log("Deleting Path + Recalulating Path");
+
+                deleteOldPath();
+
+                reMap();
+
+                m_path = m_pathFinder.FindPathAStar(m_graph, m_StartNode, m_EndNode, new Heuristic(m_EndNode));
+
+                if (m_path == null)
+                {
+                    Debug.Log("No Path was found this iteration");
+                }
+                else
+                {
+                    Debug.Log("YES! A path was found this iteration");
+
+                    m_path.RemoveAll(c => c == null);
+
+                    foreach (var connection in m_path)
+                    {
+                        if (connection != null)
+                            m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+                    }
+
+                    // Set agents current position
+                    if (m_path[0] != null)
+                    {
+                        gameObject.transform.position = new Vector3(m_path[0].GetFromNode().NodeId.x, 1.0f, m_path[0].GetFromNode().NodeId.x);
+                    }
+                }
+            }
+        }
+    }
+
+    public void followPath()
+    {
+        if (m_path == null)
+            return;
+
+        if (m_graph.m_ValidGraph)
+        {
+            /*
+            find current position
+            find connection to start from
+            find to node
+            lerp current pos to ToNode pos
+            check for near ToNode
+                if at ToNode
+                    next node
+                else if ToNode == EndNode
+                    recalculate path
+             */
+            Vector3 currentPosition = gameObject.transform.position;
+
+            if (!m_IsMovingToDestinationNode)
+            {
+                foreach (Connection connection in m_path)
+                {
+                    if (connection == null)
+                    {
+                        Debug.Log("Connection is null...");
+                        continue;
+                    }
+
+                    if (connection.GetFromNode() == null)
+                        continue;
+
+                    if (connection.GetToNode() == null)
+                        return;
+
+                    Vector2 fromNodePos = connection.GetFromNode().NodeId;
+                    Vector2 toNodePos = connection.GetToNode().NodeId;
+
+                    float fromDist = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
+                    float toDist = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
+
+                    if (fromDist < 1.5f && toDist < 1.5f)
+                    {
+                        m_IsMovingToDestinationNode = true;
+                        currentConnection = connection;
+                        fromDistance = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
+                        toDistance = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
+                    }
+                }
             }
 
-            List<Connection> path = m_pathFinder.FindPathAStar(m_graph, m_StartNode, m_EndNode, new Heuristic(m_EndNode));
-
-            if (path == null)
+            if (!m_IsAtEndNode && m_IsMovingToDestinationNode && currentConnection != null)
             {
-                Debug.Log("No Path was found this iteration");
+                Vector2 toNodePosition = currentConnection.GetToNode().NodeId;
+
+                gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, new Vector3(toNodePosition.x, 0.5f, toNodePosition.y), Time.deltaTime * 4.0f);
+
+                // Check for closing in on ToNode
+                Vector2 fromNodePosition = currentConnection.GetFromNode().NodeId;
+
+                float fromDis = Vector2.Distance(fromNodePosition, new Vector2(currentPosition.x, currentPosition.z));
+                float toDis = Vector2.Distance(toNodePosition, new Vector2(currentPosition.x, currentPosition.z)); ;
+
+                if (toDis < 0.2f)
+                {
+                    gameObject.transform.position = new Vector3(toNodePosition.x, 0.5f, toNodePosition.y);
+                    m_IsMovingToDestinationNode = false;
+                }
+
+                if (currentConnection.GetToNode().NodeId == m_path[m_path.Count - 1].GetToNode().NodeId)
+                {
+                    // Set start node as current position
+                    // Get random or predicatable end node
+                    reMap();
+                    ResetPath();
+                    m_IsAtEndNode = true;
+                    Debug.Log("AGENT AT END NODE");
+                }
             }
             else
             {
-                Debug.Log("YES! A path was found this iteration");
-                foreach (var connection in path)
-                {
-                    if (connection != null)
-                        m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
-                }
+                Debug.Log("Current Connection is null...");
             }
-            
         }
     }
 
-    void RemoveNodeFromOpenList(Node node)
-    {
-        m_ClosedList.Add(node);
-
-        Node removeNode = new Node();
-        foreach (var listNode in m_OpenList) //TODO: Identified problem with the open list - redundant node inside REMOVE
-        {
-            if (listNode.NodeId == node.NodeId)
-            {
-                GameObject tempObj = GameObject.Find(listNode.NodeId.x + " : " + listNode.NodeId.y);
-
-                if (tempObj != null)
-                {
-                    tempObj.GetComponent<MeshRenderer>().material = nodeMat2;
-                    Destroy(tempObj);
-                }
-                removeNode = listNode;
-                break;
-            }
-        }
-
-        m_OpenList.Remove(removeNode);
-    }
-    public void reMap()
+    private void deleteOldPath()
     {
         GameObject[] prevPath = GameObject.FindGameObjectsWithTag("Path");
 
@@ -175,6 +249,10 @@ public class AgentNavigation : MonoBehaviour
         {
             Destroy(obj);
         }
+    }
+
+    public void reMap()
+    {
         m_graph.CreateGraphWithoutDiagonals();
     }
 }

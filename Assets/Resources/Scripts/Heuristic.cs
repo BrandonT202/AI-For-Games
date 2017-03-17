@@ -11,6 +11,7 @@ public class Heuristic
 
     public float Estimate(Node node)
     {
+        // Manhattan distance
         return Mathf.Abs(node.NodeId.x - m_goalNode.NodeId.y) + Mathf.Abs(node.NodeId.y - m_goalNode.NodeId.y);
     }
 }
