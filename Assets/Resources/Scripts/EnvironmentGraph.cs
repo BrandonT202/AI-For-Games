@@ -4,7 +4,7 @@ using System;
 
 class EnvironmentGraph
 {
-    enum Direction { NORTH = 0, EAST, SOUTH, WEST, NUMOFDIRECTIONS };
+    enum Direction { NORTH = 0, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST, NUMOFDIRECTIONS };
 
     public Mesh m_mesh;
     public Material m_material;
@@ -90,7 +90,7 @@ class EnvironmentGraph
         int xCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
         int zCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
 
-        if(m_XIndex < xCount)
+        if (m_XIndex < xCount)
         {
             if (m_ZIndex < zCount)
             {
@@ -172,29 +172,44 @@ class EnvironmentGraph
         for (Direction m_direction = Direction.NORTH; m_direction < Direction.NUMOFDIRECTIONS; m_direction++)
         {
             Node node = new Node();
+
+            // Calculate connection cost
+            float newConnectionCost = ((int)m_direction % 2) == 0 ? 10 : 14;
+            
             switch (m_direction)
             {
                 case Direction.NORTH:
                     node.NodeId = new Vector2(searchPos.x, searchPos.z + 1);
                     break;
+                case Direction.NORTHEAST:
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z + 1);
+                    break;
                 case Direction.EAST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
+                    break;
+                case Direction.SOUTHEAST:
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z - 1);
                     break;
                 case Direction.SOUTH:
                     node.NodeId = new Vector2(searchPos.x, searchPos.z - 1);
                     break;
+                case Direction.SOUTHWEST:
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z - 1);
+                    break;
                 case Direction.WEST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
+                    break;
+                case Direction.NORTHWEST:
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z + 1);
                     break;
                 default:
                     break;
             }
 
+            //BUG: finds a diagonal path through a wall
+
             if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
-                    // Calculate connection cost
-                    float newConnectionCost = 10;
-
                 // Set FromNode
                 Node fromNode = new Node();
                 fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
@@ -203,13 +218,12 @@ class EnvironmentGraph
                 Node toNode = node;
 
                 // Debug: Add sphere to represent TO NODE
-                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y), 
-                    new Vector3(0.2f, 0.2f, 0.2f), m_material, 
+                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y),
+                    new Vector3(0.2f, 0.2f, 0.2f), m_material,
                     toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
 
                 // Create new connection node
-
-                    Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
+                Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
 
                 //Add potential node
                 if (Vector2.Distance(fromNode.NodeId, toNode.NodeId) <= 1)
@@ -217,9 +231,6 @@ class EnvironmentGraph
             }
             else
             {
-                // Calculate connection cost
-                float newConnectionCost = 10;
-
                 // Set FromNode
                 Node fromNode = new Node();
                 fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
@@ -229,9 +240,9 @@ class EnvironmentGraph
 
                 bool connection = m_graph.Exists(c => c.GetFromNode().NodeId == fromNode.NodeId &&
                                                             c.GetToNode().NodeId == toNode.NodeId);
-                if(!connection)//if wall
+                if (!connection)//if wall
                 {
-                    if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y), 
+                    if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y),
                         new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
                     {
                         // Create new connection node
@@ -260,7 +271,6 @@ class EnvironmentGraph
 
     void createObj(Vector3 pos, Vector3 scale, Material mat, string name, string tagname = "Path")
     {
-
         GameObject obj = new GameObject();
         obj.transform.position = pos;
         obj.transform.localScale = scale;

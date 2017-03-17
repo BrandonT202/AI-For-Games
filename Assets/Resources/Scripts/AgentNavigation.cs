@@ -49,7 +49,6 @@ public class AgentNavigation : MonoBehaviour
 
     void Start()
     {
-
         m_graph = new EnvironmentGraph(mesh, nodeMat2);
         m_graph.Reset();
 
@@ -107,7 +106,14 @@ public class AgentNavigation : MonoBehaviour
             timer = 0f;
         }
 
-        if (m_graph.m_ValidGraph && timer > .1f)
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            timer = 0f;
+            reMap();
+            ResetPath();
+        }
+
+        if (m_graph.m_ValidGraph && timer > 2f)
         {
             //m_graph.m_ValidGraph = false;
             timer = 0f;
