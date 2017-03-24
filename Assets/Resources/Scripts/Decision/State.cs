@@ -12,6 +12,11 @@ public class State
         m_transitions = new List<Transition>();
     }
 
+    public void AddTransition(float min, float max, float target)
+    {
+        m_transitions.Add(new Transition(min, max, target));
+    }
+
     public List<Transition> GetTransitions()
     {
         return m_transitions;

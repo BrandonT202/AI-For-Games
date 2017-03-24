@@ -17,6 +17,12 @@ public class StateMachine
         m_actions = new List<Action>();
     }
 
+    public void AddState (float min, float max, float target)
+    {
+        State newState = new State();
+        newState.AddTransition(min, max, target);
+    }
+
     public List<Action> Update()
     {
         Transition m_triggeredTransition = null;
