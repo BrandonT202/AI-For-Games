@@ -14,6 +14,8 @@ class EnvironmentGraph
     private List<Connection> m_graph;
 
     private Vector3 m_currentPosition;
+    Vector3 startPosition;
+    Vector3 endPosition;
 
     // Real-time values
     int m_XIndex = 0;
@@ -24,18 +26,21 @@ class EnvironmentGraph
     {
         this.m_mesh = mesh;
         this.m_material = material;
+        m_graph = new List<Connection>();
     }
 
     public void Reset()
     {
         m_ValidGraph = false;
-        GameObject start = GameObject.Find("Range1");
+        GameObject start = GameObject.Find("RangeBottom");
         Node startNode = new Node();
-        Vector3 startPosition = start.transform.position;
+        startPosition = start.transform.position;
         startNode.NodeId = new Vector2(startPosition.x, startPosition.z);
 
+        endPosition = GameObject.Find("RangeTop").transform.position;
+
         m_currentPosition = startPosition;
-        m_graph = new List<Connection>();
+        m_graph.Clear();
     }
 
     public void DrawGraph()
@@ -52,13 +57,13 @@ class EnvironmentGraph
         }
     }
 
-    public void CreateGraphWithoutDiagonals()
+    public void CreateGraphWithDiagonals()
     {
         // Reset graph for new graph creation
         Reset();
 
-        int xCount = 21;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
-        int zCount = 21;// Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
         for (int i = 0; i < xCount; i++)
         {
             List<Connection> newConnections = new List<Connection>();
@@ -87,8 +92,8 @@ class EnvironmentGraph
         GameObject end = GameObject.FindWithTag("EndNode");
         Vector3 endPosition = end.transform.position;
 
-        int xCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
-        int zCount = 20;//Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
+        int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
 
         if (m_XIndex < xCount)
         {
@@ -175,7 +180,7 @@ class EnvironmentGraph
 
             // Calculate connection cost
             float newConnectionCost = ((int)m_direction % 2) == 0 ? 10 : 14;
-            
+
             switch (m_direction)
             {
                 case Direction.NORTH:
@@ -266,7 +271,7 @@ class EnvironmentGraph
     public void newNode(Node node, Material mat, string tagname)
     {
         Debug.Log("Found valid node");
-        createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(1, 1, 1), mat, node.NodeId.x + " : " + node.NodeId.y, tagname);
+        createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(0.6f, 0.6f, 0.6f), mat, node.NodeId.x + " : " + node.NodeId.y, tagname);
     }
 
     void createObj(Vector3 pos, Vector3 scale, Material mat, string name, string tagname = "Path")

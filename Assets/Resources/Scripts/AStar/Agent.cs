@@ -20,8 +20,9 @@ public class Agent : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        if(timer > 0.5f)
+        if(timer > 0.05f)
         {
+            timer = 0f;
             // Follow path
             m_agentNavigation.followPath();
         }

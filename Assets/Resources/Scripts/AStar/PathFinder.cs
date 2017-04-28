@@ -65,7 +65,6 @@ class PathFinder
                 break;
 
             // Otherwise get the nodes around the current node
-            // TODO: Graph class that needs to return a list of near by nodes
             List<Connection> connections = graph.GetSurroundingConnections(m_Current.Node);
 
             // Value to be used later on...
@@ -141,6 +140,7 @@ class PathFinder
             // it to the closed list
             m_OpenList.Remove(m_Current);
             m_ClosedList.Add(m_Current);
+            Debug.Log("Closed List Size: " + m_ClosedList.Count);
         }
 
         // Either the goal has been found or
@@ -149,6 +149,7 @@ class PathFinder
         {
             // Ran out of nodes without finding
             // a solution, thus no solution
+            Debug.Log("Ran out of nodes before finding a solution");
             return null;
         }
         else
@@ -200,7 +201,7 @@ class PathFinder
             {
                 path.Add(tempPath[i]);
             }
-
+            Debug.Log("Found a solution: " + path.Count + "Nodes");
             return path;
         }
     }
