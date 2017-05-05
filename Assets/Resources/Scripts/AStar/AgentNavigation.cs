@@ -87,13 +87,14 @@ public class AgentNavigation : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.R))
         {
-            for (int i = 0; i < 2; i++)
-            {
+            //for (int i = 0; i < 2; i++)
+            //{
                 GameObject start = GameObject.FindWithTag("StartNode");
                 GameObject end = GameObject.FindWithTag("EndNode");
                 start.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
+                transform.position = new Vector3(start.transform.position.x, transform.position.y, start.transform.position.z);
                 end.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
-            }
+            //}
             RegenerateGrid();
 
             ResetPath();
