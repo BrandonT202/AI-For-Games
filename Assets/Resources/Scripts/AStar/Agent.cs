@@ -20,11 +20,14 @@ public class Agent : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        if(timer > 0.05f)
+        if(timer > 0.1f)
         {
             timer = 0f;
             // Follow path
-            m_agentNavigation.followPath();
+            if (Input.GetKey(KeyCode.F))
+            {
+                m_agentNavigation.followPath();
+            }
         }
 
         if (timer > 5f) // Potentially a state change or decision change

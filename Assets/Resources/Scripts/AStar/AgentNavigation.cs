@@ -87,18 +87,19 @@ public class AgentNavigation : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.R))
         {
-            //for (int i = 0; i < 2; i++)
-            //{
-                GameObject start = GameObject.FindWithTag("StartNode");
-                GameObject end = GameObject.FindWithTag("EndNode");
-                start.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
-                transform.position = new Vector3(start.transform.position.x, transform.position.y, start.transform.position.z);
-                end.transform.position = new Vector3(Random.Range(-10, 10), 0.5f, Random.Range(-10, 10));
-            //}
-            RegenerateGrid();
-
-            ResetPath();
             timer = 0f;
+            GameObject start = GameObject.FindWithTag("StartNode");
+            GameObject end = GameObject.FindWithTag("EndNode");
+            GameObject rangeTop = GameObject.Find("RangeTop");
+            GameObject rangeBottom = GameObject.Find("RangeBottom");
+            Vector3 topPos = rangeTop.transform.position;
+            Vector3 bottomPos = rangeBottom.transform.position;
+            start.transform.position = new Vector3(Random.Range((int)topPos.x, (int)topPos.z), 1.5f, Random.Range((int)bottomPos.x, (int)bottomPos.z));
+            end.transform.position = new Vector3(Random.Range((int)bottomPos.x, (int)bottomPos.z), 1.5f, Random.Range((int)topPos.x, (int)topPos.z));
+
+            transform.position = new Vector3(start.transform.position.x, transform.position.y, start.transform.position.z);
+            RegenerateGrid();
+            ResetPath();
         }
 
         if (Input.GetKeyDown(KeyCode.T))
@@ -201,7 +202,7 @@ public class AgentNavigation : MonoBehaviour
                     float fromDist = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
                     float toDist = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
 
-                    if (fromDist < 1.5f && toDist < 1.5f)
+                    if (fromDist < 0.5f && toDist < 0.5f)
                     {
                         m_IsMovingToDestinationNode = true;
                         currentConnection = connection;
@@ -244,6 +245,10 @@ public class AgentNavigation : MonoBehaviour
             {
                 Debug.Log("Current Connection is null...");
             }
+        }
+        else
+        {
+            Debug.Log("Graph is invalid");
         }
     }
 

@@ -232,7 +232,9 @@ class EnvironmentGraph
 
                 //Add potential node
                 if (Vector2.Distance(fromNode.NodeId, toNode.NodeId) <= 1)
+                {
                     potentialNodes.Add(newConnection);
+                }
             }
             else
             {
