@@ -175,27 +175,6 @@ class PathFinder
                 m_Current = record;
             }
 
-            //while (m_Current.Node.NodeId != start.NodeId)
-            //{
-            //    tempPath.Add(m_Current.Connection);
-            //    m_Current.Node = m_Current.Connection.GetFromNode();
-
-            //    Vector2 previousNodeId = previousRecord.Node.NodeId;
-            //    Vector2 currentNodeId = m_Current.Node.NodeId;
-
-            //    if (previousRecord.Node.NodeId == m_Current.Node.NodeId)
-            //    {
-            //        Debug.Log("Path Error: Record Node");
-            //        break;
-            //    }
-            //    previousRecord = m_Current;
-            //    //if (previousRecord.Connection.GetFromNode().NodeId == m_Current.Connection.GetFromNode().NodeId)
-            //    //{
-            //    //    Debug.Log("Path Error: Record Connection");
-            //    //    break;
-            //    //}
-            //}
-
             // Reverse the path and return it
             for (int i = tempPath.Count - 1; i >= 0; i--)
             {

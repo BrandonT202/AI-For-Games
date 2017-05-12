@@ -64,6 +64,9 @@ class EnvironmentGraph
 
         int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
         int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
+        Debug.Log("X-Count: " + xCount);
+        Debug.Log("Z-Count: " + zCount);
+
         for (int i = 0; i < xCount; i++)
         {
             List<Connection> newConnections = new List<Connection>();
@@ -86,10 +89,10 @@ class EnvironmentGraph
 
     public void RealTimeCreateGraphWithoutDiagonals()
     {
-        GameObject start = GameObject.FindWithTag("StartNode");
+        GameObject start = GameObject.Find("RangeBottom");
         Vector3 startPosition = start.transform.position;
 
-        GameObject end = GameObject.FindWithTag("EndNode");
+        GameObject end = GameObject.Find("RangeTop");
         Vector3 endPosition = end.transform.position;
 
         int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
@@ -187,25 +190,25 @@ class EnvironmentGraph
                     node.NodeId = new Vector2(searchPos.x, searchPos.z + 1);
                     break;
                 case Direction.NORTHEAST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z + 1);
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z + 1);
                     break;
                 case Direction.EAST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
                     break;
                 case Direction.SOUTHEAST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z - 1);
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z - 1);
                     break;
                 case Direction.SOUTH:
                     node.NodeId = new Vector2(searchPos.x, searchPos.z - 1);
                     break;
                 case Direction.SOUTHWEST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z - 1);
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z - 1);
                     break;
                 case Direction.WEST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
                     break;
                 case Direction.NORTHWEST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z + 1);
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z + 1);
                     break;
                 default:
                     break;
@@ -215,6 +218,8 @@ class EnvironmentGraph
 
             if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
+                Debug.Log("Position is clear: " + node.NodeId.x + " : " + node.NodeId.y);
+
                 // Set FromNode
                 Node fromNode = new Node();
                 fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 
 public class AgentNavigation : MonoBehaviour
 {
-    enum Direction { NORTH = 0, EAST, SOUTH, WEST, NUMOFDIRECTIONS };
-
     // Open list for nodes currently able to be visited
     private List<Node> m_OpenList = new List<Node>();
 
@@ -62,7 +60,7 @@ public class AgentNavigation : MonoBehaviour
         CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
         CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
         CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
-        m_graph.CreateGraphWithDiagonals();
+        //m_graph.CreateGraphWithDiagonals();
     }
 
     private void ResetPath()
@@ -84,6 +82,8 @@ public class AgentNavigation : MonoBehaviour
     {
         timer += Time.deltaTime;
         m_graph.DrawGraph(); // DEBUG GRID
+        if (m_path != null)
+            drawPath();
 
         if (Input.GetKeyDown(KeyCode.R))
         {
@@ -106,54 +106,73 @@ public class AgentNavigation : MonoBehaviour
         {
             timer = 0f;
 
+            m_graph.CreateGraphWithDiagonals();
+
             if (m_graph.m_ValidGraph)
             {
                 Debug.Log("Calculating Path using A*");
                 m_path = m_pathFinder.FindPathAStar(m_graph, m_StartNode, m_EndNode, new Heuristic(m_EndNode));
             }
 
-            Debug.Log("Is graph valid? [" + m_graph.m_ValidGraph + "]");
-            Debug.Log("Is start node valid? [" + (m_StartNode != null) + "]");
-            Debug.Log("Is end node valid? [" + (m_EndNode != null) + "]");
+            //Debug.Log("Is graph valid? [" + m_graph.m_ValidGraph + "]");
+            //Debug.Log("Is start node valid? [" + (m_StartNode != null) + "]");
+            //Debug.Log("Is end node valid? [" + (m_EndNode != null) + "]");
         }
 
-        //if (m_graph.m_ValidGraph && timer > 5f)
-        //{
-        //    //m_graph.m_ValidGraph = false;
-        //    timer = 0f;
+        if (m_graph.m_ValidGraph && timer > 5f)
+        {
+            //m_graph.m_ValidGraph = false;
+            timer = 0f;
 
-        //    if (!m_IsMovingToDestinationNode)
-        //    {
-        //        Debug.Log("Deleting Path + Recalulating Path");
+            //if (!m_IsMovingToDestinationNode)
+            //{
+            //    Debug.Log("Deleting Path + Recalulating Path");
 
-        //        deleteOldPath();
+            //    deleteOldPath();
 
-        //        RegenerateGrid();
+            //    RegenerateGrid();
 
-        //        if (m_path == null)
-        //        {
-        //            Debug.Log("No Path was found this iteration");
-        //        }
-        //        else
-        //        {
-        //            Debug.Log("YES! A path was found this iteration");
+            //    if (m_path == null)
+            //    {
+            //        Debug.Log("No Path was found this iteration");
+            //    }
+            //    else
+            //    {
+            //        Debug.Log("YES! A path was found this iteration");
 
-        //            m_path.RemoveAll(c => c == null);
+            //        m_path.RemoveAll(c => c == null);
 
-        //            foreach (var connection in m_path)
-        //            {
-        //                if (connection != null)
-        //                    m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
-        //            }
+            //        foreach (var connection in m_path)
+            //        {
+            //            if (connection != null)
+            //                m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+            //        }
 
-        //            // Set agents current position
-        //            if (m_path[0] != null)
-        //            {
-        //                gameObject.transform.position = new Vector3(m_path[0].GetFromNode().NodeId.x, 1.0f, m_path[0].GetFromNode().NodeId.x);
-        //            }
-        //        }
-        //    }
-        //}
+            //        // Set agents current position
+            //        if (m_path[0] != null)
+            //        {
+            //            gameObject.transform.position = new Vector3(m_path[0].GetFromNode().NodeId.x, 1.0f, m_path[0].GetFromNode().NodeId.x);
+            //        }
+            //    }
+            //}
+        }
+    }
+
+    public void drawPath()
+    {
+        foreach (Connection connection in m_path)
+        {
+            if (connection == null)
+                continue;
+
+            Node fromNode = connection.GetFromNode();
+            Node toNode = connection.GetToNode();
+
+            //Debug: Add Line to represent the connections
+            Vector3 from = new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y);
+            Vector3 to = new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y);
+            Debug.DrawLine(from, to, Color.green);
+        }
     }
 
     public void followPath()
@@ -181,20 +200,20 @@ public class AgentNavigation : MonoBehaviour
             Debug.Log("Following path using a valid graph");
             if (!m_IsMovingToDestinationNode)
             {
-                Debug.Log("!m_IsMovingToDestinationNode");
+                currentConnection = m_path[0] ?? m_path[1];
+                Debug.Log("!m_IsMovingToDestinationNode" + currentConnection);
                 foreach (Connection connection in m_path)
                 {
-                    if (connection == null)
+                    if (connection != null)
                     {
-                        Debug.Log("Connection is null...");
-                        continue;
+                        if (connection.GetFromNode() == null)
+                            continue;
+
+                        if (connection.GetToNode() == null)
+                            return;
                     }
-
-                    if (connection.GetFromNode() == null)
+                    else
                         continue;
-
-                    if (connection.GetToNode() == null)
-                        return;
 
                     Vector2 fromNodePos = connection.GetFromNode().NodeId;
                     Vector2 toNodePos = connection.GetToNode().NodeId;

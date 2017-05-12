@@ -20,7 +20,7 @@ public class Agent : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        if(timer > 0.1f)
+        if(timer > 1f)
         {
             timer = 0f;
             // Follow path
