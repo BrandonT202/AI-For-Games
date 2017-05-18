@@ -6,20 +6,25 @@ class EnvironmentGraph
 {
     enum Direction { NORTH = 0, NORTHEAST, EAST, SOUTHEAST, SOUTH, SOUTHWEST, WEST, NORTHWEST, NUMOFDIRECTIONS };
 
-    public Mesh m_mesh;
-    public Material m_material;
+    [SerializeField]
+    private Mesh m_mesh;
 
-    // A list of connections between all the 
-    // nodes in the game environment
+    [SerializeField]
+    private Material m_material;
+
+    /// <summary>
+    /// A list of connections between all the nodes in the game environment
+    /// </summary>
     private List<Connection> m_graph;
 
     private Vector3 m_currentPosition;
-    Vector3 startPosition;
-    Vector3 endPosition;
+    private Vector3 startPosition;
+    private Vector3 endPosition;
 
     // Real-time values
     int m_XIndex = 0;
     int m_ZIndex = 0;
+
     public bool m_ValidGraph { get; set; }
 
     public EnvironmentGraph(Mesh mesh, Material material)
@@ -29,20 +34,29 @@ class EnvironmentGraph
         m_graph = new List<Connection>();
     }
 
+    /// <summary>
+    /// Reset the start and end range nodes, clear the graph and set current position to the start 
+    /// </summary>
     public void Reset()
     {
         m_ValidGraph = false;
-        GameObject start = GameObject.Find("RangeBottom");
-        Node startNode = new Node();
-        startPosition = start.transform.position;
-        startNode.NodeId = new Vector2(startPosition.x, startPosition.z);
 
+        // find the bottom range value
+        startPosition = GameObject.Find("RangeBottom").transform.position;
+
+        // find the top range value
         endPosition = GameObject.Find("RangeTop").transform.position;
 
+        // set current position to the start position
         m_currentPosition = startPosition;
+
+        // remove any graph connections
         m_graph.Clear();
     }
 
+    /// <summary>
+    /// Render the connections in the graph in the scene view (for debugging)
+    /// </summary>
     public void DrawGraph()
     {
         foreach (Connection connection in m_graph)
@@ -57,15 +71,17 @@ class EnvironmentGraph
         }
     }
 
+    /// <summary>
+    /// Creates the graph from a start position and an end position
+    /// </summary>
     public void CreateGraphWithDiagonals()
     {
         // Reset graph for new graph creation
         Reset();
 
-        int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x));
-        int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z));
-        Debug.Log("X-Count: " + xCount);
-        Debug.Log("Z-Count: " + zCount);
+        int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x)) + 1;
+        int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z)) + 1;
+        Debug.Log("X-Count: " + xCount + " || " + "Z - Count: " + zCount);
 
         for (int i = 0; i < xCount; i++)
         {
@@ -79,12 +95,108 @@ class EnvironmentGraph
                     m_graph.AddRange(newConnections);
                 }
 
-                m_currentPosition.z -= 1f;
+                m_currentPosition.z += 1f;
             }
-            m_currentPosition.z += zCount;
-            m_currentPosition.x -= 1f;
+            m_currentPosition.z -= zCount;
+            m_currentPosition.x += 1f;
         }
         m_ValidGraph = true;
+    }
+
+    /// <summary>
+    /// Gets all the potential connections from the search position in eight directions
+    /// </summary>
+    /// <param name="searchPos"></param>
+    /// <returns></returns>
+    private List<Connection> GetPotentialNodes(Vector3 searchPos)
+    {
+        List<Connection> potentialNodes = new List<Connection>();
+        for (Direction m_direction = Direction.NORTH; m_direction < Direction.NUMOFDIRECTIONS; m_direction++)
+        {
+            Node node = new Node();
+
+            // Calculate connection cost
+            float newConnectionCost = ((int)m_direction % 2) == 0 ? 10 : 14;
+
+            switch (m_direction)
+            {
+                case Direction.NORTH:
+                    node.NodeId = new Vector2(searchPos.x, searchPos.z + 1);
+                    break;
+                case Direction.NORTHEAST:
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z + 1);
+                    break;
+                case Direction.EAST:
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
+                    break;
+                case Direction.SOUTHEAST:
+                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z - 1);
+                    break;
+                case Direction.SOUTH:
+                    node.NodeId = new Vector2(searchPos.x, searchPos.z - 1);
+                    break;
+                case Direction.SOUTHWEST:
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z - 1);
+                    break;
+                case Direction.WEST:
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
+                    break;
+                case Direction.NORTHWEST:
+                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z + 1);
+                    break;
+                default:
+                    break;
+            }
+
+            // take away any node that is not facing forward or to the right side of the starting node
+            if ((node.NodeId.x < startPosition.x || node.NodeId.y < startPosition.z) 
+                || (node.NodeId.x > endPosition.x || node.NodeId.y > endPosition.z))
+                continue;
+
+            // Set FromNode
+            Node fromNode = new Node();
+            fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
+
+            // Set ToNode
+            Node toNode = node;
+
+            if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
+            {
+                //Debug.Log("Position CLEAR: " + node.NodeId.x + " : " + node.NodeId.y);
+
+                // Debug: Add sphere to represent TO NODE
+                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y),
+                    new Vector3(0.2f, 0.2f, 0.2f), m_material,
+                    toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
+
+                // Create new connection node
+                Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
+
+                //Add potential node
+                potentialNodes.Add(newConnection);
+            }
+            else
+            {
+                bool connection = m_graph.Exists(c => c.GetFromNode().NodeId == fromNode.NodeId &&
+                                                            c.GetToNode().NodeId == toNode.NodeId);
+                if (!connection)//if wall
+                {
+                    if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y),
+                        new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
+                    {
+                        //Debug.Log("Position not CLEAR but added connection: " + node.NodeId.x + " : " + node.NodeId.y);
+
+                        // Create new connection node
+                        Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
+
+                        //Add potential node
+                        potentialNodes.Add(newConnection);
+                    }
+                }
+            }
+        }
+
+        return potentialNodes;
     }
 
     public void RealTimeCreateGraphWithoutDiagonals()
@@ -134,20 +246,11 @@ class EnvironmentGraph
         }
     }
 
-    public List<Connection> GetSurroundingConnections(Node centerNode)
-    {
-        List<Connection> surroundingConnections = new List<Connection>();
-        foreach (Connection connection in m_graph)
-        {
-            Node fromNode = connection.GetFromNode();
-            if (fromNode.NodeId == centerNode.NodeId)
-            {
-                surroundingConnections.Add(connection);
-            }
-        }
-        return surroundingConnections;
-    }
-
+    /// <summary>
+    /// Checks if there is any object in the way
+    /// </summary>
+    /// <param name="position"></param>
+    /// <returns></returns>
     private bool IsPositionClear(Vector3 position)
     {
         if (Physics.OverlapSphere(position, 0.2f).Length == 0)
@@ -158,6 +261,13 @@ class EnvironmentGraph
             return false;
     }
 
+    /// <summary>
+    /// Determines if the connection from->to is valid looking 
+    /// for a grid tag on the collision object
+    /// </summary>
+    /// <param name="from"></param>
+    /// <param name="to"></param>
+    /// <returns></returns>
     private bool IsConnectionValid(Vector3 from, Vector3 to)
     {
         if (from == to)
@@ -174,113 +284,56 @@ class EnvironmentGraph
         return true;
     }
 
-    private List<Connection> GetPotentialNodes(Vector3 searchPos)
+    /// <summary>
+    /// Get all surrounding connection from the center node
+    /// </summary>
+    /// <param name="centerNode"></param>
+    /// <returns></returns>
+    public List<Connection> GetSurroundingConnections(Node centerNode)
     {
-        List<Connection> potentialNodes = new List<Connection>();
-        for (Direction m_direction = Direction.NORTH; m_direction < Direction.NUMOFDIRECTIONS; m_direction++)
+        List<Connection> surroundingConnections = new List<Connection>();
+        foreach (Connection connection in m_graph)
         {
-            Node node = new Node();
-
-            // Calculate connection cost
-            float newConnectionCost = ((int)m_direction % 2) == 0 ? 10 : 14;
-
-            switch (m_direction)
+            Node fromNode = connection.GetFromNode();
+            if (fromNode.NodeId == centerNode.NodeId)
             {
-                case Direction.NORTH:
-                    node.NodeId = new Vector2(searchPos.x, searchPos.z + 1);
-                    break;
-                case Direction.NORTHEAST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z + 1);
-                    break;
-                case Direction.EAST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z);
-                    break;
-                case Direction.SOUTHEAST:
-                    node.NodeId = new Vector2(searchPos.x + 1, searchPos.z - 1);
-                    break;
-                case Direction.SOUTH:
-                    node.NodeId = new Vector2(searchPos.x, searchPos.z - 1);
-                    break;
-                case Direction.SOUTHWEST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z - 1);
-                    break;
-                case Direction.WEST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z);
-                    break;
-                case Direction.NORTHWEST:
-                    node.NodeId = new Vector2(searchPos.x - 1, searchPos.z + 1);
-                    break;
-                default:
-                    break;
-            }
-
-            //BUG: finds a diagonal path through a wall
-
-            if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
-            {
-                Debug.Log("Position is clear: " + node.NodeId.x + " : " + node.NodeId.y);
-
-                // Set FromNode
-                Node fromNode = new Node();
-                fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
-
-                // Set ToNode
-                Node toNode = node;
-
-                // Debug: Add sphere to represent TO NODE
-                createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y),
-                    new Vector3(0.2f, 0.2f, 0.2f), m_material,
-                    toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
-
-                // Create new connection node
-                Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
-
-                //Add potential node
-                if (Vector2.Distance(fromNode.NodeId, toNode.NodeId) <= 1)
-                {
-                    potentialNodes.Add(newConnection);
-                }
-            }
-            else
-            {
-                // Set FromNode
-                Node fromNode = new Node();
-                fromNode.NodeId = new Vector2(searchPos.x, searchPos.z);
-
-                // Set ToNode
-                Node toNode = node;
-
-                bool connection = m_graph.Exists(c => c.GetFromNode().NodeId == fromNode.NodeId &&
-                                                            c.GetToNode().NodeId == toNode.NodeId);
-                if (!connection)//if wall
-                {
-                    if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y),
-                        new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
-                    {
-                        // Create new connection node
-                        Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
-
-                        //Add potential node
-                        potentialNodes.Add(newConnection);
-                    }
-                }
+                surroundingConnections.Add(connection);
             }
         }
-        return potentialNodes;
+        return surroundingConnections;
     }
 
+    /// <summary>
+    /// Create a visible default node in the game world
+    /// </summary>
+    /// <param name="node"></param>
     public void newNode(Node node)
     {
         Debug.Log("Found valid node");
         createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(1, 1, 1), m_material, node.NodeId.x + " : " + node.NodeId.y);
     }
 
+    /// <summary>
+    /// Create a visible custom node in the game world
+    /// </summary>
+    /// <param name="node"></param>
+    /// <param name="mat"></param>
+    /// <param name="tagname"></param>
     public void newNode(Node node, Material mat, string tagname)
     {
         Debug.Log("Found valid node");
         createObj(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y), new Vector3(0.6f, 0.6f, 0.6f), mat, node.NodeId.x + " : " + node.NodeId.y, tagname);
     }
 
+
+    /// <summary>
+    /// Create the sphere object
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <param name="scale"></param>
+    /// <param name="mat"></param>
+    /// <param name="name"></param>
+    /// <param name="tagname"></param>
     void createObj(Vector3 pos, Vector3 scale, Material mat, string name, string tagname = "Path")
     {
         GameObject obj = new GameObject();

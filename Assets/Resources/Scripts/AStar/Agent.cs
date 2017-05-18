@@ -5,9 +5,9 @@ public class Agent : MonoBehaviour
 {
     private AgentNavigation m_agentNavigation;
 
-    private float timer;
-
     private List<Connection> m_path;
+
+    private float timer;
 
     // Use this for initialization
     void Start () 
@@ -28,11 +28,6 @@ public class Agent : MonoBehaviour
             {
                 m_agentNavigation.followPath();
             }
-        }
-
-        if (timer > 5f) // Potentially a state change or decision change
-        {
-            // Get new path
         }
     }
 }

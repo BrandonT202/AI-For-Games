@@ -140,7 +140,6 @@ class PathFinder
             // it to the closed list
             m_OpenList.Remove(m_Current);
             m_ClosedList.Add(m_Current);
-            Debug.Log("Closed List Size: " + m_ClosedList.Count);
         }
 
         // Either the goal has been found or
@@ -171,7 +170,10 @@ class PathFinder
                 }
                 Node fromNode = m_Current.Connection.GetFromNode();
                 NodeRecord record = m_ClosedList.Find(r => r.Node.NodeId == fromNode.NodeId);
-                tempPath.Add(record.Connection);
+                if (record.Connection != null)
+                {
+                    tempPath.Add(record.Connection);
+                }
                 m_Current = record;
             }
 
@@ -180,7 +182,7 @@ class PathFinder
             {
                 path.Add(tempPath[i]);
             }
-            Debug.Log("Found a solution: " + path.Count + "Nodes");
+            Debug.Log("Found a solution: " + path.Count + " Node Connections");
             return path;
         }
     }

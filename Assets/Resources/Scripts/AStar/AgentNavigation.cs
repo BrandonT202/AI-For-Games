@@ -9,11 +9,11 @@ public class AgentNavigation : MonoBehaviour
     // Closed list for nodes visited
     public List<Node> m_ClosedList = new List<Node>();
 
+    // A non-negative graph for traversing the environment
     private EnvironmentGraph m_graph;
 
+    // A path finder object that encapsulates the A* algorithm
     private PathFinder m_pathFinder = new PathFinder();
-
-    public int ListSize;
 
     // Starting Node
     private Node m_StartNode;
@@ -21,20 +21,14 @@ public class AgentNavigation : MonoBehaviour
     // End Node
     private Node m_EndNode;
 
-    private Node m_CurrentNode;
-
-    //private Node m_Last
-
-    public int m_currentHeuristicCost = 0;
-
     public Mesh mesh;
 
-    private GameObject CurrentNode;
+    private GameObject m_CurrentNode;
 
     public Material nodeMat;
     public Material nodeMat2;
     public Material CurrNodeMat;
-    float timer;
+    private float timer;
 
     List<Connection> m_path;
 
@@ -52,25 +46,28 @@ public class AgentNavigation : MonoBehaviour
 
         ResetPath();
 
-        CurrentNode = new GameObject();
-        CurrentNode.transform.localScale *= 0.5f;
-        CurrentNode.name = "CurrentNode";
-        CurrentNode.AddComponent<MeshRenderer>();
-        CurrentNode.AddComponent<MeshFilter>();
-        CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
-        CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
-        CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
-        //m_graph.CreateGraphWithDiagonals();
+        m_CurrentNode = new GameObject();
+        m_CurrentNode.transform.localScale *= 0.5f;
+        m_CurrentNode.name = "CurrentNode";
+        m_CurrentNode.AddComponent<MeshRenderer>();
+        m_CurrentNode.AddComponent<MeshFilter>();
+        m_CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
+        m_CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
+        m_CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
+        m_graph.CreateGraphWithDiagonals();
     }
 
     private void ResetPath()
     {
+        // find the start node
         GameObject start = GameObject.FindWithTag("StartNode");
-        GameObject end = GameObject.FindWithTag("EndNode");
 
         m_StartNode = new Node();
         Vector3 startPosition = start.transform.position;
         m_StartNode.NodeId = new Vector2(startPosition.x, startPosition.z);
+
+        // find the end node
+        GameObject end = GameObject.FindWithTag("EndNode");
 
         m_EndNode = new Node();
         Vector3 endPosition = end.transform.position;
@@ -84,29 +81,32 @@ public class AgentNavigation : MonoBehaviour
         m_graph.DrawGraph(); // DEBUG GRID
         if (m_path != null)
             drawPath();
+        timer = 0f;
 
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            timer = 0f;
-            GameObject start = GameObject.FindWithTag("StartNode");
-            GameObject end = GameObject.FindWithTag("EndNode");
-            GameObject rangeTop = GameObject.Find("RangeTop");
-            GameObject rangeBottom = GameObject.Find("RangeBottom");
-            Vector3 topPos = rangeTop.transform.position;
-            Vector3 bottomPos = rangeBottom.transform.position;
-            start.transform.position = new Vector3(Random.Range((int)topPos.x, (int)topPos.z), 1.5f, Random.Range((int)bottomPos.x, (int)bottomPos.z));
-            end.transform.position = new Vector3(Random.Range((int)bottomPos.x, (int)bottomPos.z), 1.5f, Random.Range((int)topPos.x, (int)topPos.z));
+        //if (Input.GetKeyDown(KeyCode.R))
+        //{
+        //    timer = 0f;
+        //    GameObject start = GameObject.FindWithTag("StartNode");
+        //    GameObject end = GameObject.FindWithTag("EndNode");
+        //    GameObject rangeTop = GameObject.Find("RangeTop");
+        //    GameObject rangeBottom = GameObject.Find("RangeBottom");
+        //    Vector3 topPos = rangeTop.transform.position;
+        //    Vector3 bottomPos = rangeBottom.transform.position;
+        //    start.transform.position = new Vector3(Random.Range((int)topPos.x, (int)topPos.z), 1.5f, Random.Range((int)bottomPos.x, (int)bottomPos.z));
+        //    end.transform.position = new Vector3(Random.Range((int)bottomPos.x, (int)bottomPos.z), 1.5f, Random.Range((int)topPos.x, (int)topPos.z));
 
-            transform.position = new Vector3(start.transform.position.x, transform.position.y, start.transform.position.z);
-            RegenerateGrid();
-            ResetPath();
-        }
+        //    transform.position = new Vector3(start.transform.position.x, transform.position.y, start.transform.position.z);
+        //    RegenerateGrid();
+        //    ResetPath();
+        //}
 
         if (Input.GetKeyDown(KeyCode.T))
         {
             timer = 0f;
 
             m_graph.CreateGraphWithDiagonals();
+
+            ResetPath();
 
             if (m_graph.m_ValidGraph)
             {
@@ -119,43 +119,43 @@ public class AgentNavigation : MonoBehaviour
             //Debug.Log("Is end node valid? [" + (m_EndNode != null) + "]");
         }
 
-        if (m_graph.m_ValidGraph && timer > 5f)
-        {
-            //m_graph.m_ValidGraph = false;
-            timer = 0f;
+        //if (m_graph.m_ValidGraph && timer > 5f)
+        //{
+        //    //m_graph.m_ValidGraph = false;
+        //    timer = 0f;
 
-            //if (!m_IsMovingToDestinationNode)
-            //{
-            //    Debug.Log("Deleting Path + Recalulating Path");
+        //    //if (!m_IsMovingToDestinationNode)
+        //    //{
+        //    //    Debug.Log("Deleting Path + Recalulating Path");
 
-            //    deleteOldPath();
+        //    //    deleteOldPath();
 
-            //    RegenerateGrid();
+        //    //    RegenerateGrid();
 
-            //    if (m_path == null)
-            //    {
-            //        Debug.Log("No Path was found this iteration");
-            //    }
-            //    else
-            //    {
-            //        Debug.Log("YES! A path was found this iteration");
+        //    //    if (m_path == null)
+        //    //    {
+        //    //        Debug.Log("No Path was found this iteration");
+        //    //    }
+        //    //    else
+        //    //    {
+        //    //        Debug.Log("YES! A path was found this iteration");
 
-            //        m_path.RemoveAll(c => c == null);
+        //    //        m_path.RemoveAll(c => c == null);
 
-            //        foreach (var connection in m_path)
-            //        {
-            //            if (connection != null)
-            //                m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
-            //        }
+        //    //        foreach (var connection in m_path)
+        //    //        {
+        //    //            if (connection != null)
+        //    //                m_graph.newNode(connection.GetFromNode(), nodeMat, "Path");
+        //    //        }
 
-            //        // Set agents current position
-            //        if (m_path[0] != null)
-            //        {
-            //            gameObject.transform.position = new Vector3(m_path[0].GetFromNode().NodeId.x, 1.0f, m_path[0].GetFromNode().NodeId.x);
-            //        }
-            //    }
-            //}
-        }
+        //    //        // Set agents current position
+        //    //        if (m_path[0] != null)
+        //    //        {
+        //    //            gameObject.transform.position = new Vector3(m_path[0].GetFromNode().NodeId.x, 1.0f, m_path[0].GetFromNode().NodeId.x);
+        //    //        }
+        //    //    }
+        //    //}
+        //}
     }
 
     public void drawPath()
@@ -163,7 +163,9 @@ public class AgentNavigation : MonoBehaviour
         foreach (Connection connection in m_path)
         {
             if (connection == null)
-                continue;
+            {
+                Debug.Log("Connection in path is null");
+            };
 
             Node fromNode = connection.GetFromNode();
             Node toNode = connection.GetToNode();
