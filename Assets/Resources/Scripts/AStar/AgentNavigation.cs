@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class AgentNavigation : MonoBehaviour
 {
@@ -32,8 +33,8 @@ public class AgentNavigation : MonoBehaviour
 
     List<Connection> m_path;
 
-    public float fromDistance;
-    public float toDistance;
+    public float m_fromDistance;
+    public float m_toDistance;
 
     bool m_IsMovingToDestinationNode = false;
     bool m_IsAtEndNode = false;
@@ -54,7 +55,11 @@ public class AgentNavigation : MonoBehaviour
         m_CurrentNode.GetComponent<MeshFilter>().mesh = mesh;
         m_CurrentNode.GetComponent<MeshFilter>().mesh.name = "Sphere";
         m_CurrentNode.GetComponent<MeshRenderer>().material = CurrNodeMat;
+
+        DateTime startTime = DateTime.Now;
         m_graph.CreateGraphWithDiagonals();
+        int afterGraphTime = startTime.Millisecond - DateTime.Now.Millisecond;
+        Debug.Log("Time to load graph: " + "[" + afterGraphTime + "]");
     }
 
     private void ResetPath()
@@ -63,7 +68,7 @@ public class AgentNavigation : MonoBehaviour
         GameObject start = GameObject.FindWithTag("StartNode");
 
         m_StartNode = new Node();
-        Vector3 startPosition = start.transform.position;
+        Vector3 startPosition = gameObject.transform.position;
         m_StartNode.NodeId = new Vector2(startPosition.x, startPosition.z);
 
         // find the end node
@@ -74,14 +79,17 @@ public class AgentNavigation : MonoBehaviour
         m_EndNode.NodeId = new Vector2(endPosition.x, endPosition.z);
     }
 
+    void Update()
+    {
+        m_graph.DrawGraph(); // DEBUG GRID
+
+        if (m_path != null)
+            drawPath(); // DEBUG PATH
+    }
 
     void FixedUpdate()
     {
         timer += Time.deltaTime;
-        m_graph.DrawGraph(); // DEBUG GRID
-        if (m_path != null)
-            drawPath();
-        timer = 0f;
 
         //if (Input.GetKeyDown(KeyCode.R))
         //{
@@ -100,11 +108,11 @@ public class AgentNavigation : MonoBehaviour
         //    ResetPath();
         //}
 
-        if (Input.GetKeyDown(KeyCode.T))
+        if (timer > 0.5f && Input.GetKeyDown(KeyCode.T))
         {
             timer = 0f;
-
-            m_graph.CreateGraphWithDiagonals();
+            Debug.Log("Button Pressed");
+            //m_graph.CreateGraphWithDiagonals();
 
             ResetPath();
 
@@ -206,15 +214,7 @@ public class AgentNavigation : MonoBehaviour
                 Debug.Log("!m_IsMovingToDestinationNode" + currentConnection);
                 foreach (Connection connection in m_path)
                 {
-                    if (connection != null)
-                    {
-                        if (connection.GetFromNode() == null)
-                            continue;
-
-                        if (connection.GetToNode() == null)
-                            return;
-                    }
-                    else
+                    if (connection == null)
                         continue;
 
                     Vector2 fromNodePos = connection.GetFromNode().NodeId;
@@ -223,12 +223,12 @@ public class AgentNavigation : MonoBehaviour
                     float fromDist = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
                     float toDist = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
 
-                    if (fromDist < 0.5f && toDist < 0.5f)
+                    if (fromDist < 0.2f && toDist < 1.5f)
                     {
                         m_IsMovingToDestinationNode = true;
                         currentConnection = connection;
-                        fromDistance = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
-                        toDistance = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
+                        m_fromDistance = Vector2.Distance(fromNodePos, new Vector2(currentPosition.x, currentPosition.z));
+                        m_toDistance = Vector2.Distance(toNodePos, new Vector2(currentPosition.x, currentPosition.z));
                     }
                 }
             }
@@ -252,19 +252,17 @@ public class AgentNavigation : MonoBehaviour
                     m_IsMovingToDestinationNode = false;
                 }
 
-                if (currentConnection.GetToNode().NodeId == m_path[m_path.Count - 1].GetToNode().NodeId)
+                bool lastConnectionIsDestination = currentConnection.GetToNode().NodeId == m_path[m_path.Count - 1].GetToNode().NodeId;
+                bool atEndNode = toDis < 0.05f;
+                if (lastConnectionIsDestination && atEndNode)
                 {
                     // Set start node as current position
                     // Get random or predicatable end node
-                    RegenerateGrid();
                     ResetPath();
+                    RegenerateGrid();
                     m_IsAtEndNode = true;
                     Debug.Log("AGENT AT END NODE");
                 }
-            }
-            else
-            {
-                Debug.Log("Current Connection is null...");
             }
         }
         else

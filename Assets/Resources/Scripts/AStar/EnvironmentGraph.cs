@@ -149,7 +149,7 @@ class EnvironmentGraph
             }
 
             // take away any node that is not facing forward or to the right side of the starting node
-            if ((node.NodeId.x < startPosition.x || node.NodeId.y < startPosition.z) 
+            if ((node.NodeId.x < startPosition.x || node.NodeId.y < startPosition.z)
                 || (node.NodeId.x > endPosition.x || node.NodeId.y > endPosition.z))
                 continue;
 
@@ -162,12 +162,19 @@ class EnvironmentGraph
 
             if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
-                //Debug.Log("Position CLEAR: " + node.NodeId.x + " : " + node.NodeId.y);
+                Debug.Log("Position CLEAR: " + node.NodeId.x + " : " + node.NodeId.y);
 
                 // Debug: Add sphere to represent TO NODE
                 createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y),
                     new Vector3(0.2f, 0.2f, 0.2f), m_material,
                     toNode.NodeId.x + " : " + toNode.NodeId.y, "Grid");
+
+                Collider[] colliders = Physics.OverlapSphere(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y), 0.3f);
+                if (colliders.Length > 0)
+                {
+                    if (colliders[0].tag != "Grid")
+                        break;
+                }
 
                 // Create new connection node
                 Connection newConnection = new Connection(newConnectionCost, fromNode, toNode);
@@ -184,6 +191,25 @@ class EnvironmentGraph
                     if (IsConnectionValid(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y),
                         new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y)))
                     {
+                        Collider[] colliders = Physics.OverlapSphere(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y), 0.3f);
+                        if (colliders.Length > 0)
+                        {
+                            if ((colliders[0].tag != "Grid") & (colliders[0].tag != "Player"))
+                                break;
+                        }
+
+                        colliders = Physics.OverlapSphere(new Vector3(fromNode.NodeId.x, 0.5f, fromNode.NodeId.y), 0.3f);
+                        if (colliders.Length > 0)
+                        {
+                            if ((colliders[0].tag != "Grid") & (colliders[0].tag != "Player"))
+                                break;
+                        }
+
+                        if (fromNode.NodeId.x == 2 && fromNode.NodeId.y == 2 && toNode.NodeId.x == 1 && toNode.NodeId.y == 1)
+                        {
+                            Debug.Log("unbelievable");
+                        }
+
                         //Debug.Log("Position not CLEAR but added connection: " + node.NodeId.x + " : " + node.NodeId.y);
 
                         // Create new connection node
@@ -274,10 +300,12 @@ class EnvironmentGraph
             return false;
 
         // Check for collision at the TO node
-        Collider[] obstructions = Physics.OverlapSphere(to, 0.2f);
-        if (obstructions.Length > 0)
+        Vector3 direction = 2 * (to - from);
+        RaycastHit hit;
+
+        if (Physics.Raycast(from, direction, out hit))
         {
-            if (obstructions[0].tag != "Grid")
+            if (hit.transform.tag != "Grid" && hit.transform.tag != "Player")
                 return false;
         }
 

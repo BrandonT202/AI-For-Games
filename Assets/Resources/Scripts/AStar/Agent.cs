@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Agent : MonoBehaviour 
+public class Agent : MonoBehaviour
 {
     private AgentNavigation m_agentNavigation;
 
@@ -10,24 +10,29 @@ public class Agent : MonoBehaviour
     private float timer;
 
     // Use this for initialization
-    void Start () 
+    void Start()
     {
         m_agentNavigation = gameObject.GetComponent<AgentNavigation>();
-	}
-	
-	// Update is called once per frame
-	void Update () 
+    }
+
+    /* 
+     *  If in state agent needs to be able to:
+     *  Request a new grid if the world changes
+     *  Request the shortest path to destination
+     *  Request to start following path
+     *  Request to stop following the path
+     */
+
+    void Update()
     {
         timer += Time.deltaTime;
 
-        if(timer > 1f)
+        if (timer > 0.01f)
         {
             timer = 0f;
+
             // Follow path
-            if (Input.GetKey(KeyCode.F))
-            {
-                m_agentNavigation.followPath();
-            }
+            m_agentNavigation.followPath();
         }
     }
 }
