@@ -32,7 +32,10 @@ public class Agent : MonoBehaviour
             timer = 0f;
 
             // Follow path
-            m_agentNavigation.followPath();
+			if (m_agentNavigation.m_ValidToMove)
+				m_agentNavigation.followPath ();
+			else
+				Debug.Log ("Path invalid");
         }
     }
 }

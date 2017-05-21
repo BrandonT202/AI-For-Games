@@ -186,4 +186,26 @@ class PathFinder
             return path;
         }
     }
+
+	public List<Connection> FindPathRealTimeAStar(EnvironmentGraph graph, Node start, Node end, Heuristic heuristic)
+	{
+		// If the end node isn't in the graph
+		// and therefore isn't able to be found
+		// change the end position to the lowest 
+		// estimated cost node
+		Node finalEndNode = new Node();
+
+		// Find the end node in the graph
+		finalEndNode = graph.FindClosestEstimatedNode(end, heuristic);
+
+		if (finalEndNode.NodeId == end.NodeId)
+			Debug.Log ("End Node found in graph");
+		
+		// If in the graph run normal A* pathfinding
+		return FindPathAStar(graph, start, finalEndNode, heuristic);
+
+		//else
+		//TODO: change the finalEndNode to the closest estimated Cost node
+		//TODO: real-time A* pathfinding
+	}
 }

@@ -118,6 +118,11 @@ class EnvironmentGraph
             // Calculate connection cost
             float newConnectionCost = ((int)m_direction % 2) == 0 ? 10 : 14;
 
+			// TODO: Connection Cost Scaling with Naive Bayes
+			// index the prob table
+			// if over prob threshold
+			// scale the connection cost
+
             switch (m_direction)
             {
                 case Direction.NORTH:
@@ -225,6 +230,9 @@ class EnvironmentGraph
         return potentialNodes;
     }
 
+	/// <summary>
+	/// Reals the time create graph without diagonals.
+	/// </summary>
     public void RealTimeCreateGraphWithoutDiagonals()
     {
         GameObject start = GameObject.Find("RangeBottom");
@@ -330,6 +338,34 @@ class EnvironmentGraph
         }
         return surroundingConnections;
     }
+
+	public Node FindClosestEstimatedNode(Node endNode, Heuristic heuristic)
+	{
+		Node returnNode = null;
+
+		int prevEstimatedCost = 1000;
+		foreach (var connection in m_graph) 
+		{
+			Node toNode = connection.GetToNode ();
+
+			if (endNode.NodeId == toNode.NodeId) 
+			{
+				returnNode = toNode;
+				break;
+			}
+
+			int estimate = (int)heuristic.Estimate (toNode);
+			if (estimate < prevEstimatedCost) 
+			{
+				returnNode = toNode;
+				prevEstimatedCost = estimate;
+			}
+		}
+
+		Debug.Log ("Return Node: " + returnNode.NodeId.x + ":" + returnNode.NodeId.y);
+
+		return returnNode;
+	}
 
     /// <summary>
     /// Create a visible default node in the game world
