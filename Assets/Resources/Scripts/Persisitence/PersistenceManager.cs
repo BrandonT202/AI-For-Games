@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using UnityEngine;
+using System.Collections.Generic;
 using Mono.Data.Sqlite;
 
 public class PersistenceManager
@@ -164,34 +164,23 @@ public class PersistenceManager
         }
     }
 
-    public SqliteDataReader Select(string tableName, bool ascendingOrder = false, string columnName = "")
+    public float SelectOutput(string tableName, int index)
     {
         StringBuilder sb = new StringBuilder();
         try
         {
-            if (ascendingOrder)
-            {
-                sb.AppendFormat("select {0} from {1} order by {2} asc", "*", tableName, columnName);
-            }
-            else if (columnName.Length > 0)
-            {
-                sb.AppendFormat("select {0} from {1} order by {2} desc", "*", tableName, columnName);
-            }
-            else
-            {
-                sb.AppendFormat("select {0} from {1}", "*", tableName);
-            }
-
+            sb.AppendFormat("select {0}", index);
             string selectCommand = sb.ToString();
             SqliteCommand select = new SqliteCommand(selectCommand, m_dbConnection);
 
             select.ExecuteNonQuery();
-            return select.ExecuteReader();
+            SqliteDataReader reader = select.ExecuteReader();
+            return reader.GetFloat(1);
         }
         catch (SqliteException ex)
         {
             Console.WriteLine("Select error: " + ex.Message);
-            return null;
+            return 0.0f;
         }
     }
 

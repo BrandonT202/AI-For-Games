@@ -1,113 +1,53 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using Panda;
+using UnityEngine;
 using System.Collections.Generic;
 
-public class EnemyBehaviour : MonoBehaviour {
+public class EnemyBehaviour : MonoBehaviour
+{
+    private List<Vector3> m_positions;
+    private Vector3 m_centre;
 
-    public bool canMove;
-    public bool isMoving;
-    public GameObject Target;
-    public float fieldOfView;
-    public float Range;
-    public bool CanSee;
-    public bool isNear;
-    public bool isChasing;
-    public List<Vector3> IdlePathNodes;
-    public int currentIdleNode = 0;
-    public float angle;
+    private float m_speed;
+    private int m_currentPositionIndex;
 
-
-    // Use this for initialization
-    void Start() {
-        IdlePathNodes[0] = transform.position;
-    }	
-
-    void Reset()
+    void Start ()
     {
-        if (GameObject.Find("Player"))
-            Target = GameObject.Find("Player");
-        if (GameObject.Find("Agent"))
-            Target = GameObject.Find("Agent");
-        if (IdlePathNodes.Count < 1)
-            IdlePathNodes.Add(transform.position);
-        else
-            IdlePathNodes[0] = transform.position;
+        m_positions = new List<Vector3>();
+        m_centre = transform.FindChild("Centre").position;
+
+        m_positions.Add(new Vector3(m_centre.x - 3, m_centre.y, m_centre.z - 3));
+        m_positions.Add(new Vector3(m_centre.x + 3, m_centre.y, m_centre.z - 3));
+        m_positions.Add(new Vector3(m_centre.x + 3, m_centre.y, m_centre.z + 3));
+        m_positions.Add(new Vector3(m_centre.x - 3, m_centre.y, m_centre.z + 3));
+
+        m_currentPositionIndex = 0;
+        m_speed = 1.5f;
     }
 
-
-
-
-
-    // Update is called once per frame
-    void Update() {
-        if (Vector3.Distance(Target.transform.position, transform.position) <= Range)
-            isNear = true;
-        else
-            isNear = false;
-        //double angle = DoAngleMath(transform.position, Target.transform.position);
-        Vector3 targetDir = Target.transform.position - transform.position;
-        angle = Vector3.Angle(targetDir, transform.forward) - transform.rotation.y * 2;
-        if (angle < transform.rotation.y + fieldOfView && angle > transform.rotation.y - fieldOfView) {
-            
-                CanSee = true;
-        }
-        else
-            CanSee = false;
-
-
-        if (CanSee && isNear)
-            isChasing = true;
-        else
-            isChasing = false;
-
-        if (!isChasing)
-            Idle();
-    }
-
-
-    void Idle() {
-        
-    }
-
-
-    double DoAngleMath(Vector3 pos, Vector3 target)
+    [Task]
+    void MoveToNextPosition()
     {
-        float dx;
-        float dy;
-        double theta;
+        Vector3 destination = m_positions[m_currentPositionIndex];
+        Vector3 delta = (destination - transform.position);
+        Vector3 velocity = m_speed * delta.normalized;
 
-        dx = target.x - pos.x;
-        dy = target.z - pos.z;
-        dy = -dy;  // convert from screen-space
-                   // to proper mathematical space.
+        transform.position = transform.position + velocity * Time.deltaTime;
 
-        if (dx == 0)
+        Vector3 newDelta = (destination - transform.position);
+        float d = newDelta.magnitude;
+
+        if (Task.isInspected)
+            Task.current.debugInfo = string.Format("d={0:0.000}", d);
+
+        if (Vector3.Dot(delta, newDelta) <= 0.0f || d < 1e-3)
         {
-            theta = 0.0;
+            m_currentPositionIndex++;
+            transform.position = destination;
+            m_currentPositionIndex = m_currentPositionIndex > m_positions.Count - 1 ? 0 : m_currentPositionIndex;
+            Task.current.Succeed();
+            d = 0.0f;
+            Task.current.debugInfo = "d=0.000";
         }
-        else
-        {
-
-            /*  if not using atan2
-                theta = Math.atan(dy/dx);
-            */
-
-
-            theta = Mathf.Atan2(dy, dx);
-            theta = theta * 360 * 0.5 / Mathf.PI;
-
-
-            /*  if not using atan2
-                if (dx < 0)
-                  {
-                  if (dy > 0)
-                    theta += 180.0;
-                  else
-                    theta -= 180.0;
-                  }
-            */
-        }
-        return theta;
     }
-    
+
 }
