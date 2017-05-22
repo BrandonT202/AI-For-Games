@@ -27,15 +27,14 @@ public class Agent : MonoBehaviour
     {
         timer += Time.deltaTime;
 
-        if (timer > 0.01f)
-        {
-            timer = 0f;
+		if (timer > 0.01f) {
+			timer = 0f;
 
-            // Follow path
-			if (m_agentNavigation.m_ValidToMove)
+			// Follow path
+			if (m_agentNavigation.m_ValidToMove) 
+			{
 				m_agentNavigation.followPath ();
-			else
-				Debug.Log ("Path invalid");
-        }
+			}
+		}
     }
 }

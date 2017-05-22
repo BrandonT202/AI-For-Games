@@ -182,7 +182,7 @@ class PathFinder
             {
                 path.Add(tempPath[i]);
             }
-            Debug.Log("Found a solution: " + path.Count + " Node Connections");
+//            Debug.Log("Found a solution: " + path.Count + " Node Connections");
             return path;
         }
     }
@@ -197,9 +197,6 @@ class PathFinder
 
 		// Find the end node in the graph
 		finalEndNode = graph.FindClosestEstimatedNode(end, heuristic);
-
-		if (finalEndNode.NodeId == end.NodeId)
-			Debug.Log ("End Node found in graph");
 		
 		// If in the graph run normal A* pathfinding
 		return FindPathAStar(graph, start, finalEndNode, heuristic);

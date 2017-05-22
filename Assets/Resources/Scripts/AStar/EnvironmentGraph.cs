@@ -81,7 +81,7 @@ class EnvironmentGraph
 
         int xCount = Mathf.Abs(Convert.ToInt32(endPosition.x - startPosition.x)) + 1;
         int zCount = Mathf.Abs(Convert.ToInt32(endPosition.z - startPosition.z)) + 1;
-        Debug.Log("X-Count: " + xCount + " || " + "Z - Count: " + zCount);
+//        Debug.Log("X-Count: " + xCount + " || " + "Z - Count: " + zCount);
 
         for (int i = 0; i < xCount; i++)
         {
@@ -167,7 +167,7 @@ class EnvironmentGraph
 
             if (IsPositionClear(new Vector3(node.NodeId.x, 0.5f, node.NodeId.y)))
             {
-                Debug.Log("Position CLEAR: " + node.NodeId.x + " : " + node.NodeId.y);
+//                Debug.Log("Position CLEAR: " + node.NodeId.x + " : " + node.NodeId.y);
 
                 // Debug: Add sphere to represent TO NODE
                 createObj(new Vector3(toNode.NodeId.x, 0.5f, toNode.NodeId.y),
@@ -362,7 +362,7 @@ class EnvironmentGraph
 			}
 		}
 
-		Debug.Log ("Return Node: " + returnNode.NodeId.x + ":" + returnNode.NodeId.y);
+//		Debug.Log ("Return Node: " + returnNode.NodeId.x + ":" + returnNode.NodeId.y);
 
 		return returnNode;
 	}
