@@ -212,11 +212,10 @@ public class AgentNavigation : MonoBehaviour
                         recalculate path
              */
             Vector3 currentPosition = gameObject.transform.position;
-//            Debug.Log("Following path using a valid graph");
             if (!m_IsMovingToDestinationNode)
             {
 				currentConnection = m_path [0];
-//                Debug.Log("!m_IsMovingToDestinationNode" + currentConnection);
+
                 foreach (Connection connection in m_path)
                 {
                     if (connection == null)
@@ -238,9 +237,8 @@ public class AgentNavigation : MonoBehaviour
                 }
             }
 
-			if (!m_IsAtEndNode && m_IsMovingToDestinationNode) // && currentConnection != null
+			if (!m_IsAtEndNode && m_IsMovingToDestinationNode)
             {
-//                Debug.Log("!m_IsAtEndNode AND m_IsMovingToDestinationNode AND currentConnection != null");
                 Vector2 toNodePosition = currentConnection.GetToNode().NodeId;
 
                 gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, new Vector3(toNodePosition.x, 0.5f, toNodePosition.y), Time.deltaTime * 4.0f);
