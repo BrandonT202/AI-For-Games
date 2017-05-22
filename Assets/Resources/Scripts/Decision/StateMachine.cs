@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class StateMachine
 {
-    private List<State> m_states;
+    //private List<State> m_states;
 
     private List<Action> m_actions;
 
@@ -13,7 +13,7 @@ public class StateMachine
 
     public StateMachine()
     {
-        m_states = new List<State>();
+        //m_states = new List<State>();
         m_actions = new List<Action>();
     }
 

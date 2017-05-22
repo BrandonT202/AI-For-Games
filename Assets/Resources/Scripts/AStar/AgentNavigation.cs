@@ -7,12 +7,6 @@ public class AgentNavigation : MonoBehaviour
 {
 	private const int m_defaultSearchRange = 2;
 
-    // Open list for nodes currently able to be visited
-    private List<Node> m_OpenList = new List<Node>();
-
-    // Closed list for nodes visited
-    public List<Node> m_ClosedList = new List<Node>();
-
     // A non-negative graph for traversing the environment
     private EnvironmentGraph m_graph;
 
@@ -87,9 +81,7 @@ public class AgentNavigation : MonoBehaviour
 
 		m_IsAtEndNode = false;
 
-        // find the start node
-        GameObject start = GameObject.FindWithTag("StartNode");
-
+        // set start node as the current agent position
         m_StartNode = new Node();
         Vector3 startPosition = gameObject.transform.position;
         m_StartNode.NodeId = new Vector2(startPosition.x, startPosition.z);
@@ -243,10 +235,7 @@ public class AgentNavigation : MonoBehaviour
 
                 gameObject.transform.position = Vector3.Lerp(gameObject.transform.position, new Vector3(toNodePosition.x, 0.5f, toNodePosition.y), Time.deltaTime * 4.0f);
 
-                Vector2 fromNodePosition = currentConnection.GetFromNode().NodeId;
-
 				// Check for closing in on ToNode
-                float fromDis = Vector2.Distance(fromNodePosition, new Vector2(currentPosition.x, currentPosition.z));
                 float toDis = Vector2.Distance(toNodePosition, new Vector2(currentPosition.x, currentPosition.z)); ;
 
 				bool lastConnectionIsDestination = currentConnection.GetToNode().NodeId == m_path[m_path.Count - 1].GetToNode().NodeId;
