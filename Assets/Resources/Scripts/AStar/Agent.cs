@@ -15,13 +15,6 @@ public class Agent : MonoBehaviour
         m_agentNavigation = gameObject.GetComponent<AgentNavigation>();
     }
 
-    /* 
-     *  If in state agent needs to be able to:
-     *  Request a new grid if the world changes
-     *  Request the shortest path to destination
-     *  Request to start following path
-     *  Request to stop following the path
-     */
 
     void Update()
     {
